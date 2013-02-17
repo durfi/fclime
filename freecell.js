@@ -16,8 +16,8 @@ goog.require('freecell.Card');
 
 freecell.STACK_COUNT = 3;
 freecell.STACK_COLOR = '#0fe384';
+freecell.STACK_GAP = 30;
 
-freecell.CARD_COLOR = '#1651fa';
 freecell.CARD_SIZE = 100;
 
 // entry point
@@ -30,7 +30,7 @@ freecell.start = function(){
 
 	// Create game scene
 	var gameScene = new lime.Scene;
-	var layer = new lime.Layer().setPosition(100, 100);
+	var layer = freecell.layer = new lime.Layer().setPosition(100, 100);
 	gameScene.appendChild(layer);
 	
 	// Create the stacks
@@ -41,8 +41,8 @@ freecell.start = function(){
 	}
 	
 	// Create cards
-	var card1 = makeCard().setAnchorPoint(0, 0).setPosition(0, 600);
-	var card2 = makeCard().setAnchorPoint(0, 0).setPosition(150, 600);
+	var card1 = makeCard("#1651fa").setAnchorPoint(0, 0).setPosition(0, 600);
+	var card2 = makeCard("#d29234").setAnchorPoint(0, 0).setPosition(150, 600);
 	layer.appendChild(card1);
 	layer.appendChild(card2);
 
@@ -52,8 +52,8 @@ freecell.start = function(){
 
 };
 
-function makeCard() {
-	var card = new freecell.Card(freecell.CARD_SIZE, freecell.CARD_SIZE, freecell.CARD_COLOR);
+function makeCard(color) {
+	var card = new freecell.Card(freecell.CARD_SIZE, freecell.CARD_SIZE, color);
 	goog.events.listen(card, 'mousedown', function(e){
 		
 		// Get dragged cards
@@ -68,6 +68,8 @@ function makeCard() {
 		var drags = new Array();
 		for(var i = 0; i < draggedCards.length; i ++) {
 			drags[i] = e.startDrag(false, null, draggedCards[i]);
+			// Draw the lowest card on top
+			freecell.layer.setChildIndex(draggedCards[i],freecell.layer.getNumberOfChildren()-1);
 		}
 
 		// Add targets:
@@ -97,7 +99,7 @@ function makeCard() {
 				draggedCards[i].runAction(new lime.animation
 					.MoveTo(goog.math.Coordinate.sum(
 							dropTarget.getPosition(),
-							new goog.math.Coordinate(10, 10 + (targetSize) * freecell.CARD_SIZE + i * freecell.CARD_SIZE)
+							new goog.math.Coordinate(10, 10 + (targetSize) * freecell.STACK_GAP + i * freecell.STACK_GAP)
 						)
 					)
 					.setDuration(0.3));
