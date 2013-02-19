@@ -72,7 +72,7 @@ function makeCard(color) {
 			freecell.layer.setChildIndex(draggedCards[i],freecell.layer.getNumberOfChildren()-1);
 		}
 
-		// Add targets:
+		// Every stack is a target:
 		for (var i = 0; i < freecell.STACK_COUNT; i ++) {
 			drags[0].addDropTarget(freecell.stacks[i]);
 		}
@@ -104,8 +104,34 @@ function makeCard(color) {
 					)
 					.setDuration(0.3));
 			}
+		}); // End of dropping to target stack
+		
+		// If not over stack
+		goog.events.listen(drags[0], lime.events.Drag.Event.CANCEL, function(e){
+			// Disable default move animation
+			e.stopPropagation();
 			
-
+			if (draggedCards[0].stack == null)
+				return;
+			
+			// Target is the old stack
+			var dropTarget = draggedCards[0].stack;
+			var targetSize = dropTarget.Size();
+			
+			// Calculate old place and move
+			for (var i = 0; i < draggedCards.length; i ++) {
+				dropTarget.AddCard(draggedCards[i]);
+				draggedCards[i].SetStack(dropTarget);
+				
+				// Calculate new place and move
+				draggedCards[i].runAction(new lime.animation
+					.MoveTo(goog.math.Coordinate.sum(
+							dropTarget.getPosition(),
+							new goog.math.Coordinate(10, 10 + (targetSize) * freecell.STACK_GAP + i * freecell.STACK_GAP)
+						)
+					)
+					.setDuration(0.3));
+			}
 		});
 	});
 
