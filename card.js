@@ -7,17 +7,113 @@ freecell.Card = function(image, width, height, suit, value) {
 	goog.base(this);
 	this.setAnchorPoint(0, 0);
 	this.setSize(width, height);
+	this.suit = suit;
+	this.height = height;
 	
 	// Create sprite from image
 	var frame = new lime.fill.Frame(
 			image, 
-			value * freecell.CARD_WIDTH,
+			value * (freecell.CARD_WIDTH-1),
 			suit * freecell.CARD_HEIGHT, 
 			freecell.CARD_WIDTH, freecell.CARD_HEIGHT);
 	this.setFill(frame);
-}
+};
 goog.inherits(freecell.Card, lime.Sprite);
 
 freecell.Card.prototype.SetStack = function(stack) {
 	this.stack = stack;
-}
+};
+
+/**
+ * Move the card to a given stack with animation.
+ * @param {freecell.Stack} stack The stack to move to.
+ */
+freecell.Card.prototype.MoveToStack = function(stack) {
+	// Calculate new place and move
+	this.runAction(new lime.animation
+		.MoveTo(goog.math.Coordinate.sum(
+				stack.getPosition(),
+				new goog.math.Coordinate(10, 10 + stack.Size() * freecell.STACK_GAP)
+			)
+		)
+		.setDuration(0.3));
+
+	// Store the relation
+	stack.AddCard(this);
+	this.SetStack(stack);
+};
+
+/**
+ * Return a new card.
+ * @param suit Suit of the card.
+ * @param value Value of the card.
+ * @returns {freecell.Card}
+ */
+freecell.Card.MakeCard = function(suit, value) {
+	var card = new freecell.Card(
+			freecell.CARD_IMAGE,
+			100,
+			140, 
+			suit,
+			value);
+	goog.events.listen(card, 'mousedown', function(e){
+		
+		// Get dragged cards
+		var draggedCards = new Array();
+		if (card.stack != null) {
+			draggedCards = card.stack.SubStack(card);
+		} else {
+			draggedCards[0] = card;
+		}
+
+		// Start dragging them
+		var drags = new Array();
+		for(var i = 0; i < draggedCards.length; i ++) {
+			drags[i] = e.startDrag(false, null, draggedCards[i]);
+			// Draw the lowest card on top
+			freecell.layer.setChildIndex(draggedCards[i],freecell.layer.getNumberOfChildren()-1);
+		}
+
+		// Every stack is a target:
+		for (var i = 0; i < freecell.STACK_COUNT; i ++) {
+			drags[0].addDropTarget(freecell.stacks[i]);
+		}
+
+		e.event.stopPropagation();
+
+		// Drop into target stack
+		goog.events.listen(drags[0], lime.events.Drag.Event.DROP, function(e){
+			// Disable default move animation
+			e.stopPropagation();
+			
+			// Get the target stack
+			var dropTarget = e.activeDropTarget;
+			
+			console.log("dropped!");
+
+			// Remove from previous and add to new stack
+			for (var i = 0; i < draggedCards.length; i ++) {
+				draggedCards[i].MoveToStack(dropTarget);
+			}
+		}); // End of dropping to target stack
+		
+		// If not over stack
+		goog.events.listen(drags[0], lime.events.Drag.Event.CANCEL, function(e){
+			// Disable default move animation
+			e.stopPropagation();
+			
+			if (draggedCards[0].stack == null)
+				return;
+			
+			// Target is the old stack
+			var dropTarget = draggedCards[0].stack;
+			
+			// Calculate old place and move
+			for (var i = 0; i < draggedCards.length; i ++) {
+				draggedCards[i].MoveToStack(dropTarget);
+			}
+		});
+	});
+
+	return card;
+};
