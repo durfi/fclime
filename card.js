@@ -8,7 +8,7 @@ freecell.Card = function(image, width, height, suit, value) {
 	this.setAnchorPoint(0, 0);
 	this.setSize(width, height);
 	this.suit = suit;
-	this.height = height;
+	this.value = value;
 	
 	// Create sprite from image
 	var frame = new lime.fill.Frame(
@@ -56,7 +56,14 @@ freecell.Card.MakeCard = function(suit, value) {
 			140, 
 			suit,
 			value);
-	goog.events.listen(card, 'mousedown', function(e){
+	goog.events.listen(card, ['mousedown','touchstart'], function(e){
+		e.event.stopPropagation();
+		
+		// Is substack valid solitaire stack?
+		if (!card.stack.CanMove(card)) {
+			console.log("Cant move substack!");
+			return;
+		}
 		
 		// Get dragged cards
 		var draggedCards = new Array();
@@ -79,8 +86,6 @@ freecell.Card.MakeCard = function(suit, value) {
 			drags[0].addDropTarget(freecell.stacks[i]);
 		}
 
-		e.event.stopPropagation();
-
 		// Drop into target stack
 		goog.events.listen(drags[0], lime.events.Drag.Event.DROP, function(e){
 			// Disable default move animation
@@ -89,12 +94,18 @@ freecell.Card.MakeCard = function(suit, value) {
 			// Get the target stack
 			var dropTarget = e.activeDropTarget;
 			
-			console.log("dropped!");
-
-			// Remove from previous and add to new stack
+			if (! dropTarget.IsValid(draggedCards[0])) {
+				console.log("Invalid!");
+				dropTarget = draggedCards[0].stack;
+			} else {
+				console.log("Valid!");
+			}
+			
+			// Move the cards!
 			for (var i = 0; i < draggedCards.length; i ++) {
 				draggedCards[i].MoveToStack(dropTarget);
 			}
+			
 		}); // End of dropping to target stack
 		
 		// If not over stack

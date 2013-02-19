@@ -54,17 +54,10 @@ freecell.start = function(){
 		this.layer.appendChild(this.stacks[i]);
 	}
 	
-	// Create the deck
+	// Create, shuffle and deal the deck
 	this.deck = new freecell.Deck(this);
 	this.deck.Shuffle();
 	this.deck.Deal();
-	
-	// Create cards
-	// var card1 = freecell.Card.makeCard(freecell.CARD_SUITS.CLUBS, 0).setAnchorPoint(0, 0).setPosition(0, 600);
-	// var card2 = freecell.Card.makeCard(freecell.CARD_SUITS.HEARTS, 10).setAnchorPoint(0, 0).setPosition(150, 600);
-	// layer.appendChild(card1);
-	// layer.appendChild(card2);
-
 
 	// Set active scene
 	director.replaceScene(gameScene);
