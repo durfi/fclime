@@ -14,16 +14,33 @@ goog.require('lime.animation.MoveTo');
 goog.require('freecell.Stack');
 goog.require('freecell.Card');
 
+freecell.WIDTH = 1024;
+freecell.HEIGHT = 768;
+
 freecell.STACK_COUNT = 3;
 freecell.STACK_COLOR = '#0fe384';
 freecell.STACK_GAP = 30;
 
-freecell.CARD_SIZE = 100;
+freecell.CARD_WIDTH = 167;
+freecell.CARD_HEIGHT = 243;
+
+freecell.CARD_SUITS = {
+		CLUBS 	: 	0,
+		DIAMONDS:	1,
+		HEARTS	:	2,
+		SPADES	:	3
+};
+
+freecell.CARD_VALUES = {
+		ACE	:	1
+};
+
+freecell.CARD_IMAGE = 'assets/cards.png';
 
 // entry point
 freecell.start = function(){
 
-	var director = new lime.Director(document.body, 1000, 1000);
+	var director = new lime.Director(document.body, freecell.WIDTH, freecell.HEIGHT);
 	director.makeMobileWebAppCapable();
 	// director.setDisplayFPS(false);
 	
@@ -41,8 +58,8 @@ freecell.start = function(){
 	}
 	
 	// Create cards
-	var card1 = makeCard("#1651fa").setAnchorPoint(0, 0).setPosition(0, 600);
-	var card2 = makeCard("#d29234").setAnchorPoint(0, 0).setPosition(150, 600);
+	var card1 = makeCard(freecell.CARD_SUITS.CLUBS, 0).setAnchorPoint(0, 0).setPosition(0, 600);
+	var card2 = makeCard(freecell.CARD_SUITS.HEARTS, 2).setAnchorPoint(0, 0).setPosition(150, 600);
 	layer.appendChild(card1);
 	layer.appendChild(card2);
 
@@ -52,8 +69,13 @@ freecell.start = function(){
 
 };
 
-function makeCard(color) {
-	var card = new freecell.Card(freecell.CARD_SIZE, freecell.CARD_SIZE, color);
+function makeCard(suit, value) {
+	var card = new freecell.Card(
+			freecell.CARD_IMAGE,
+			110,
+			150, 
+			suit,
+			value);
 	goog.events.listen(card, 'mousedown', function(e){
 		
 		// Get dragged cards
