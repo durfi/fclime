@@ -58,14 +58,16 @@ freecell.start = function(){
 	// Create the stacks
 	this.stacks = new Array();
 	for (var i = 0; i < freecell.STACK_COUNT; i ++) {
-		this.stacks[i] = new freecell.Stack(120, 500, freecell.STACK_COLOR).setPosition(i * 150, 200);
+		this.stacks[i] = new freecell.Stack(120, 500, freecell.STACK_COLOR)
+			.setPosition(i * 150, 200);
 		this.layer.appendChild(this.stacks[i]);
 	}
 	
 	// Create the free cells
 	this.reserves = new Array();
 	for (var i = 0; i < freecell.RESERVE_COUNT; i ++) {
-		this.reserves[i] = new freecell.Reserve(120, 160, freecell.RESERVE_COLOR).setPosition(i*150, 10);
+		this.reserves[i] = new freecell.Reserve(120, 160, freecell.RESERVE_COLOR)
+			.setPosition(i*150, 10);
 		this.layer.appendChild(this.reserves[i]);
 	}
 	
@@ -86,8 +88,6 @@ freecell.start = function(){
 	director.replaceScene(gameScene);
 
 };
-
-
 
 //this is required for outside access after code is compiled in ADVANCED_COMPILATIONS mode
 goog.exportSymbol('freecell.start', freecell.start);

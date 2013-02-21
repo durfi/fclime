@@ -33,21 +33,33 @@ goog.inherits(freecell.Stack, lime.Sprite);
  * @returns {Boolean}
  */
 freecell.Stack.prototype.IsValid = function(cards) {
+	// Valid if the stack is empty
+	if (this.cards.length == 0)
+		return true;
+	
+	// Valid if the color is different and the value is one less
 	var card = cards[0];
 	var top = this.TopCard();
-	if ((top.suit % 2) != (card.suit % 2) 		// If the color is different
-			&& top.value == card.value + 1) {	// and the value is one less
-		return true;							// Then it's valid!
+	if ((top.suit % 2) != (card.suit % 2)
+			&& top.value == card.value + 1) {
+		return true;
 	}
+	
 	// Otherwise its invalid
 	return false; 
 };
 
+/**
+ * Can the given card and it's substack be moved from the stack?
+ * @param card
+ * @returns {Boolean}
+ */
 freecell.Stack.prototype.CanMove = function(card) {
 	var index = this.cards.indexOf(card);
 	if (index < 0)
 		return false;
 	
+	// Can't be moved if it's substack isn't correct
 	while (index < this.cards.length - 1) {
 		if (this.cards[index + 1].suit % 2 == this.cards[index].suit % 2
 				|| this.cards[index + 1].value != this.cards[index].value - 1) {
@@ -55,6 +67,26 @@ freecell.Stack.prototype.CanMove = function(card) {
 		}
 		index ++;
 	}
+	
+	// Can't be moved if there aren't enough free places
+	var numberOfMovedCards = this.cards.length - this.cards.indexOf(card);
+	var emptyFreeCells = 0;
+	for (var i = 0; i < freecell.reserves.length; i ++) {
+		if (freecell.reserves[i].card == null) {
+			emptyFreeCells ++;
+		}
+	}
+	var emptyStacks = 0;
+	for (var i = 0; i < freecell.stacks.length; i ++) {
+		if (freecell.stacks[i].cards.length == 0) {
+			emptyStacks ++;
+		}
+	}
+	// (number of movable cards <= (1 + number of empty freecells) * 2 ^ (number of empty columns)
+	if (numberOfMovedCards > (1+emptyFreeCells)*(Math.pow(2,emptyStacks)))
+		return false;
+	
+	// Otherwise it can be moved
 	return true;
 };
 
