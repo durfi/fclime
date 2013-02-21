@@ -14,6 +14,8 @@ goog.require('lime.animation.MoveTo');
 goog.require('freecell.Stack');
 goog.require('freecell.Card');
 goog.require('freecell.Deck');
+goog.require('freecell.Reserve');
+goog.require('freecell.Foundation');
 
 freecell.WIDTH = 1280;
 freecell.HEIGHT = 768;
@@ -21,6 +23,12 @@ freecell.HEIGHT = 768;
 freecell.STACK_COUNT = 8;
 freecell.STACK_COLOR = '#007000';
 freecell.STACK_GAP = 30;
+
+freecell.RESERVE_COUNT = 4;
+freecell.RESERVE_COLOR = '#007000';
+
+freecell.FOUNDATION_COUNT = 4;
+freecell.FOUNDATION_COLOR = '#00b000';
 
 freecell.CARD_WIDTH = 224;
 freecell.CARD_HEIGHT = 313;
@@ -52,6 +60,21 @@ freecell.start = function(){
 	for (var i = 0; i < freecell.STACK_COUNT; i ++) {
 		this.stacks[i] = new freecell.Stack(120, 500, freecell.STACK_COLOR).setPosition(i * 150, 200);
 		this.layer.appendChild(this.stacks[i]);
+	}
+	
+	// Create the free cells
+	this.reserves = new Array();
+	for (var i = 0; i < freecell.RESERVE_COUNT; i ++) {
+		this.reserves[i] = new freecell.Reserve(120, 160, freecell.RESERVE_COLOR).setPosition(i*150, 10);
+		this.layer.appendChild(this.reserves[i]);
+	}
+	
+	// Create the foundations
+	this.foundations = new Array();
+	for (var i = 0; i < freecell.FOUNDATION_COUNT; i ++) {
+		this.foundations[i] = new freecell.Foundation(120, 160, freecell.FOUNDATION_COLOR)
+			.setPosition((i+freecell.RESERVE_COUNT)*150, 10);
+		this.layer.appendChild(this.foundations[i]);
 	}
 	
 	// Create, shuffle and deal the deck

@@ -85,6 +85,12 @@ freecell.Card.MakeCard = function(suit, value) {
 		for (var i = 0; i < freecell.STACK_COUNT; i ++) {
 			drags[0].addDropTarget(freecell.stacks[i]);
 		}
+		for (var i = 0; i < freecell.RESERVE_COUNT; i ++) {
+			drags[0].addDropTarget(freecell.reserves[i]);
+		}
+		for (var i = 0; i < freecell.FOUNDATION_COUNT; i ++) {
+			drags[0].addDropTarget(freecell.foundations[i]);
+		}
 
 		// Drop into target stack
 		goog.events.listen(drags[0], lime.events.Drag.Event.DROP, function(e){
@@ -94,7 +100,7 @@ freecell.Card.MakeCard = function(suit, value) {
 			// Get the target stack
 			var dropTarget = e.activeDropTarget;
 			
-			if (! dropTarget.IsValid(draggedCards[0])) {
+			if (! dropTarget.IsValid(draggedCards)) {
 				console.log("Invalid!");
 				dropTarget = draggedCards[0].stack;
 			} else {

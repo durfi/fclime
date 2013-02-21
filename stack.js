@@ -32,7 +32,8 @@ goog.inherits(freecell.Stack, lime.Sprite);
  * @param card
  * @returns {Boolean}
  */
-freecell.Stack.prototype.IsValid = function(card) {
+freecell.Stack.prototype.IsValid = function(cards) {
+	var card = cards[0];
 	var top = this.TopCard();
 	if ((top.suit % 2) != (card.suit % 2) 		// If the color is different
 			&& top.value == card.value + 1) {	// and the value is one less
