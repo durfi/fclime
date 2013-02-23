@@ -129,7 +129,7 @@ freecell.Stack.prototype.RemoveCard = function(card) {
  * Returns (and removes) the substack starting with the given card.
  *
  * @param {freecell.Card} card The first card of the substack;
- * @return {freecell.Stack} The substack. Null if card was not found in the
+ * @return {Array.<freecell.Card>} The substack. Null if card was not found in the
  * stack.
  */
 freecell.Stack.prototype.SubStack = function(card) {
