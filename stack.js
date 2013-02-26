@@ -33,6 +33,27 @@ goog.inherits(freecell.Stack, lime.Sprite);
  * @returns {Boolean}
  */
 freecell.Stack.prototype.IsValid = function(cards) {
+	// Can't be moved if there aren't enough free places
+	var numberOfMovedCards = cards.length;
+	var emptyFreeCells = 0;
+	for (var i = 0; i < freecell.reserves.length; i ++) {
+		if (freecell.reserves[i].card == null) {
+			emptyFreeCells ++;
+		}
+	}
+	var emptyStacks = 0;
+	for (var i = 0; i < freecell.stacks.length; i ++) {
+		if (freecell.stacks[i].cards.length == 0) {
+			emptyStacks ++;
+		}
+	}
+	// Current stack doesn't count as an empty stack!
+	if (this.cards.length == 0)
+		emptyStacks --;
+	// (number of movable cards <= (1 + number of empty freecells) * 2 ^ (number of empty columns)
+	if (numberOfMovedCards > (1+emptyFreeCells)*(Math.pow(2,emptyStacks)))
+		return false;
+	
 	// Valid if the stack is empty
 	if (this.cards.length == 0)
 		return true;
@@ -67,24 +88,6 @@ freecell.Stack.prototype.CanMove = function(card) {
 		}
 		index ++;
 	}
-	
-	// Can't be moved if there aren't enough free places
-	var numberOfMovedCards = this.cards.length - this.cards.indexOf(card);
-	var emptyFreeCells = 0;
-	for (var i = 0; i < freecell.reserves.length; i ++) {
-		if (freecell.reserves[i].card == null) {
-			emptyFreeCells ++;
-		}
-	}
-	var emptyStacks = 0;
-	for (var i = 0; i < freecell.stacks.length; i ++) {
-		if (freecell.stacks[i].cards.length == 0) {
-			emptyStacks ++;
-		}
-	}
-	// (number of movable cards <= (1 + number of empty freecells) * 2 ^ (number of empty columns)
-	if (numberOfMovedCards > (1+emptyFreeCells)*(Math.pow(2,emptyStacks)))
-		return false;
 	
 	// Otherwise it can be moved
 	return true;
