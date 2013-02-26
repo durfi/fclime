@@ -49,6 +49,16 @@ freecell.start = function(){
 	director.makeMobileWebAppCapable();
 	// director.setDisplayFPS(false);
 	
+	// Create loading scene
+	var loadingScene = new lime.Scene;
+	var loadingLabel = new lime.Label().setSize(freecell.WIDTH, 80)
+		.setText('Loading game...')
+		.setFontSize(80)
+		.setFontColor("#fff")
+		.setAlign("center")
+		.setPosition(freecell.WIDTH / 2, freecell.HEIGHT / 2);
+	loadingScene.appendChild(loadingLabel);
+	
 
 	// Create game scene
 	var gameScene = new lime.Scene;
@@ -83,9 +93,18 @@ freecell.start = function(){
 	this.deck = new freecell.Deck(this);
 	this.deck.Shuffle();
 	this.deck.Deal();
-
-	// Set active scene
-	director.replaceScene(gameScene);
+	
+	// Loading scene while loading image
+	var img = new lime.fill.Image(freecell.CARD_IMAGE);
+	if (! img.isLoaded) {
+		director.replaceScene(loadingScene);
+		goog.events.listen(img, goog.events.EventType.LOAD, function() {
+			console.log("Image loaded.");
+			director.replaceScene(gameScene);
+		});
+	} else {
+		director.replaceScene(gameScene);
+	}
 
 };
 
