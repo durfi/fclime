@@ -9,12 +9,12 @@ goog.require('lime.Sprite');
  * @param color The color of the stack element in #00aaff format.
  * @returns {freecell.Foundation}
  */
-freecell.Foundation = function(width, height, color) {
+freecell.Foundation = function(number, width, height, color) {
 	goog.base(this);
 	this.setAnchorPoint(0, 0);
 	this.setSize(width, height);
 	this.setFill(color);
-
+	this.number = number;
 	this.cards = new Array();
 	
 	this.showDropHighlight = function(){
@@ -55,6 +55,14 @@ freecell.Foundation.prototype.CanMove = function(card) {
 };
 
 /**
+ * Get name of this stack.
+ * @returns {String} 
+ */
+freecell.Foundation.prototype.getName = function() {
+	return "f"+this.number;
+};
+
+/**
  * Return the top card of the stack. This doesn't remove the top card.
  * @returns {freecell.Card}
  */
@@ -87,5 +95,5 @@ freecell.Foundation.prototype.Size = function() {
 };
 
 freecell.Foundation.prototype.SubStack = function(card) {
-	return null;
+	return new Array(this.cards.pop());
 };

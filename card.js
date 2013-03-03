@@ -20,6 +20,14 @@ freecell.Card = function(image, width, height, suit, value) {
 };
 goog.inherits(freecell.Card, lime.Sprite);
 
+freecell.Card.suits = new Array("C","H","S","D");
+freecell.Card.values = new Array("A", "2", "3", "4", "5", "6", "7",
+		"8", "9", "10", "J", "Q", "K");
+
+freecell.Card.prototype.toString = function() {
+	return freecell.Card.suits[this.suit] + freecell.Card.values[this.value];
+}
+
 freecell.Card.prototype.SetStack = function(stack) {
 	this.stack = stack;
 };
@@ -103,8 +111,14 @@ freecell.Card.MakeCard = function(suit, value) {
 			if (! dropTarget.IsValid(draggedCards)) {
 				console.log("Invalid!");
 				dropTarget = draggedCards[0].stack;
+				console.log(freecell.log);
 			} else {
-				console.log("Valid!");
+				freecell.log.push(
+					new freecell.LogEntry(draggedCards[0].stack,
+						dropTarget,
+						draggedCards[0])
+				);
+				console.log("Valid: "+draggedCards[0].stack.getName()+", "+draggedCards[0].toString()+" > "+dropTarget.getName());
 			}
 			
 			// Move the cards!

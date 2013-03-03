@@ -9,12 +9,12 @@ goog.require('lime.Sprite');
  * @param color The color of the stack element in #00aaff format.
  * @returns {freecell.Reserve}
  */
-freecell.Reserve = function(width, height, color) {
+freecell.Reserve = function(number, width, height, color) {
 	goog.base(this);
 	this.setAnchorPoint(0, 0);
 	this.setSize(width, height);
 	this.setFill(color);
-
+	this.number = number;
 	this.card = null;
 	
 	this.showDropHighlight = function(){
@@ -26,6 +26,14 @@ freecell.Reserve = function(width, height, color) {
 		  
 };
 goog.inherits(freecell.Reserve, lime.Sprite);
+
+/**
+ * Get name of this stack.
+ * @returns {String} 
+ */
+freecell.Reserve.prototype.getName = function() {
+	return "r"+this.number;
+};
 
 /**
  * Is it valid to put the given card on the stack?
