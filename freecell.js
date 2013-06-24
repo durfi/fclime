@@ -22,6 +22,8 @@ goog.require('freecell.LogEntry');
 freecell.WIDTH = 1280;
 freecell.HEIGHT = 768;
 
+freecell.MARGIN_LEFT = 20;
+
 freecell.STACK_COUNT = 8;
 freecell.STACK_COLOR = '#007000';
 freecell.STACK_GAP = 30;
@@ -83,6 +85,11 @@ freecell.start = function(){
 	this.layer = new lime.Layer().setPosition(10, 0);
 	gameScene.appendChild(this.layer);
 	
+	// Create background
+	var background = new lime.Sprite().setAnchorPoint(0,0).setPosition(0,0)
+		.setSize(freecell.WIDTH, freecell.HEIGHT).setFill('#008300');
+	this.layer.appendChild(background);
+	
 	// Create the buttons
 	this.btnNewGame = new lime.GlossyButton("Új játék").setSize(120, 40).setPosition(1180, 740);
 	goog.events.listen(this.btnNewGame,'click',function(e){
@@ -99,7 +106,7 @@ freecell.start = function(){
 	this.stacks = new Array();
 	for (var i = 0; i < freecell.STACK_COUNT; i ++) {
 		this.stacks[i] = new freecell.Stack(i, 120, 500, freecell.STACK_COLOR)
-			.setPosition(i * 150, 200);
+			.setPosition(freecell.MARGIN_LEFT + i * 150, 200);
 		this.layer.appendChild(this.stacks[i]);
 	}
 	
@@ -107,7 +114,7 @@ freecell.start = function(){
 	this.reserves = new Array();
 	for (var i = 0; i < freecell.RESERVE_COUNT; i ++) {
 		this.reserves[i] = new freecell.Reserve(i, 120, 160, freecell.RESERVE_COLOR)
-			.setPosition(i*150, 10);
+			.setPosition(freecell.MARGIN_LEFT + i*150, 10);
 		this.layer.appendChild(this.reserves[i]);
 	}
 	
@@ -115,7 +122,7 @@ freecell.start = function(){
 	this.foundations = new Array();
 	for (var i = 0; i < freecell.FOUNDATION_COUNT; i ++) {
 		this.foundations[i] = new freecell.Foundation(i, 120, 160, freecell.FOUNDATION_COLOR)
-			.setPosition((i+freecell.RESERVE_COUNT)*150, 10);
+			.setPosition(freecell.MARGIN_LEFT + (i+freecell.RESERVE_COUNT)*150, 10);
 		this.layer.appendChild(this.foundations[i]);
 	}
 	
