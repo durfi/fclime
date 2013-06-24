@@ -48,15 +48,19 @@ freecell.callNewGame = function() {
 	freecell.newGame();
 };
 
+freecell.log = new Array();
+
 // entry point
 freecell.start = function(){
 	// M3W
 	var director;
 	if (typeof m3w === 'object') {
+		// Running in framework environment
 		m3w.events.setCallback('start',freecell.callNewGame);
 		director = new lime.Director(m3w.container, freecell.WIDTH, freecell.HEIGHT);
 		$(m3w.container).css('background-color', '#008300');
 	} else {
+		// Standalone version -- without framework
 		director = new lime.Director(document.body, freecell.WIDTH, freecell.HEIGHT);
 	}
 	
