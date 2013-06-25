@@ -118,6 +118,11 @@ freecell.Card.MakeCard = function(suit, value) {
 						dropTarget,
 						draggedCards[0])
 				);
+				freecell.undoLog.push(
+					new freecell.LogEntry(draggedCards[0].stack,
+						dropTarget,
+						draggedCards[0])
+				);
 				console.log("Valid: "+draggedCards[0].stack.getName()+", "+draggedCards[0].toString()+" > "+dropTarget.getName());
 			}
 			
