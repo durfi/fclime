@@ -18,6 +18,7 @@ goog.require('freecell.Deck');
 goog.require('freecell.Reserve');
 goog.require('freecell.Foundation');
 goog.require('freecell.LogEntry');
+goog.require('freecell.Wonpanel');
 
 freecell.WIDTH = 1280;
 freecell.HEIGHT = 768;
@@ -58,12 +59,15 @@ freecell.start = function(){
 	var director;
 	if (typeof m3w === 'object') {
 		// Running in framework environment
+		freecell.m3w = true;
 		m3w.events.setCallback('start',freecell.callNewGame);
 		director = new lime.Director(m3w.container, freecell.WIDTH, freecell.HEIGHT);
 	} else {
 		// Standalone version -- without framework
+		freecell.m3w = false;
 		director = new lime.Director(document.body, freecell.WIDTH, freecell.HEIGHT);
 	}
+	freecell.director = director;
 	
 	director.makeMobileWebAppCapable();
 	// director.setDisplayFPS(false);
@@ -90,10 +94,12 @@ freecell.start = function(){
 	this.layer.appendChild(background);
 	
 	// Create the buttons
-	this.btnNewGame = new lime.GlossyButton("Új játék").setSize(120, 40).setPosition(1180, 740);
-	goog.events.listen(this.btnNewGame,'click',function(e){
-	    freecell.newGame();
-	});
+	if (!freecell.m3w) {
+		this.btnNewGame = new lime.GlossyButton("Új játék").setSize(120, 40).setPosition(1180, 740);
+		goog.events.listen(this.btnNewGame,'click',function(e){
+		    freecell.newGame();
+		});
+	}
 	this.layer.appendChild(this.btnNewGame);
 	this.btnUndo = new lime.GlossyButton("Visszavonás").setSize(120, 40).setPosition(1040, 740);
 	goog.events.listen(this.btnUndo,'click',function(e){
@@ -125,6 +131,12 @@ freecell.start = function(){
 		this.layer.appendChild(this.foundations[i]);
 	}
 	
+	// Create the "game won!" panel. (don't show it yet!).
+	this.wonpanel = new freecell.Wonpanel(800, 400, "Congratulations!")
+		.setFill("#cecece")
+		.setOpacity(0);
+	this.layer.appendChild(this.wonpanel);
+	
 	// Start a new game
 	freecell.newGame();
 	
@@ -140,6 +152,27 @@ freecell.start = function(){
 		director.replaceScene(gameScene);
 	}
 
+};
+
+/**
+ * Is the game won? (Are all cards in the foundations?)
+ * If game is won show the congratulations panel!
+ */
+freecell.isWon = function() {
+	for (var i = 0; i < freecell.FOUNDATION_COUNT; i++) {
+		if (freecell.foundations[i].cards.length < 13) {
+			console.log(i+" "+freecell.foundations[i].cards.length);
+			return false;
+		}
+	}
+	
+	// Show the game won panel
+	var fade = new lime.animation.FadeTo(1).setDuration(1);
+	this.wonpanel.runAction(fade);
+	
+	// freecell.director.setPaused(true);
+	
+	return true;
 };
 
 /**
@@ -165,6 +198,9 @@ freecell.undo = function () {
  * Start new game.
  */
 freecell.newGame = function () {
+	// Hide the game won panel
+	this.wonpanel.setOpacity(0);
+	
 	// Create the log
 	this.undoLog = new Array();
 	

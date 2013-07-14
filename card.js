@@ -131,6 +131,11 @@ freecell.Card.MakeCard = function(suit, value) {
 				draggedCards[i].MoveToStack(dropTarget);
 			}
 			
+			// Check if game is won
+			if (freecell.isWon()) {
+				// Display congratulations
+				
+			}
 		}); // End of dropping to target stack
 		
 		// If not over stack
