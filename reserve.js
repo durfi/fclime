@@ -95,3 +95,10 @@ freecell.Reserve.prototype.SubStack = function(card) {
 	}
 	return null;
 };
+
+freecell.Reserve.prototype.isEmpty = function() {
+	if (this.card == null) {
+		return true;
+	}
+	return false;
+};

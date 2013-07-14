@@ -46,18 +46,22 @@ freecell.Stack.prototype.IsValid = function(cards) {
 	var numberOfMovedCards = cards.length;
 	var emptyFreeCells = 0;
 	for (var i = 0; i < freecell.reserves.length; i ++) {
-		if (freecell.reserves[i].card == null) {
+		if (freecell.reserves[i].isEmpty()) {
 			emptyFreeCells ++;
 		}
 	}
 	var emptyStacks = 0;
 	for (var i = 0; i < freecell.stacks.length; i ++) {
-		if (freecell.stacks[i].cards.length == 0) {
+		if (freecell.stacks[i].isEmpty()) {
 			emptyStacks ++;
 		}
 	}
 	// Current stack doesn't count as an empty stack!
 	if (this.cards.length == 0)
+		emptyStacks --;
+	// Stack the cards are dragged from doesn't count as an empty stack!
+	console.log("ennyi maradt: "+cards[0].stack.cards.length);
+	if (cards[0].stack.isEmpty())
 		emptyStacks --;
 	// (number of movable cards <= (1 + number of empty freecells) * 2 ^ (number of empty columns)
 	if (numberOfMovedCards > (1+emptyFreeCells)*(Math.pow(2,emptyStacks)))
@@ -150,4 +154,11 @@ freecell.Stack.prototype.SubStack = function(card) {
 		return null;
 	
 	return this.cards.splice(index, this.cards.length - index);
+};
+
+freecell.Stack.prototype.isEmpty = function() {
+	if (this.cards.length == 0) {
+		return true;
+	}
+	return false;
 };

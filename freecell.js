@@ -161,7 +161,6 @@ freecell.start = function(){
 freecell.isWon = function() {
 	for (var i = 0; i < freecell.FOUNDATION_COUNT; i++) {
 		if (freecell.foundations[i].cards.length < 13) {
-			console.log(i+" "+freecell.foundations[i].cards.length);
 			return false;
 		}
 	}
@@ -182,6 +181,8 @@ freecell.undo = function () {
 	if (this.undoLog == null) 
 		return;
 	if (this.undoLog.length == 0)
+		return;
+	if (freecell.isWon())
 		return;
 	
 	var lastMove = this.undoLog.pop();

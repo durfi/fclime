@@ -26,7 +26,7 @@ freecell.Card.values = new Array("A", "2", "3", "4", "5", "6", "7",
 
 freecell.Card.prototype.toString = function() {
 	return freecell.Card.suits[this.suit] + freecell.Card.values[this.value];
-}
+};
 
 freecell.Card.prototype.SetStack = function(stack) {
 	this.stack = stack;
