@@ -1,5 +1,7 @@
 goog.provide('freecell.Deck');
 
+goog.require('seedrandom');
+
 /**
  * Create and init the deck.
  * @param {freecel} fc The FreeCell object that creates the deck.
@@ -29,7 +31,13 @@ freecell.Deck.prototype.CreateCards = function() {
  * @param seed
  */
 freecell.Deck.prototype.Shuffle = function(seed) {
+	if (seed != null) {
+		Math.seedrandom(seed);
+	} else {
+		Math.seedrandom();
+	}
 	this.cards = shuffle(this.cards);
+	Math.seedrandom();
 	// TODO: seeding!!!
 };
 

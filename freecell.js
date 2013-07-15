@@ -229,7 +229,7 @@ freecell.newGame = function () {
 	
 	// Create, shuffle and deal the deck
 	this.deck = new freecell.Deck(this);
-	this.deck.Shuffle();
+	this.deck.Shuffle(null);
 	this.deck.Deal();
 };
 

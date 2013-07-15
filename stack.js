@@ -60,7 +60,6 @@ freecell.Stack.prototype.IsValid = function(cards) {
 	if (this.cards.length == 0)
 		emptyStacks --;
 	// Stack the cards are dragged from doesn't count as an empty stack!
-	console.log("ennyi maradt: "+cards[0].stack.cards.length);
 	if (cards[0].stack.isEmpty())
 		emptyStacks --;
 	// (number of movable cards <= (1 + number of empty freecells) * 2 ^ (number of empty columns)
