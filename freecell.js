@@ -18,7 +18,7 @@ goog.require('freecell.Deck');
 goog.require('freecell.Reserve');
 goog.require('freecell.Foundation');
 goog.require('freecell.LogEntry');
-goog.require('freecell.Wonpanel');
+goog.require('freecell.Textpanel');
 
 freecell.WIDTH = 1280;
 freecell.HEIGHT = 768;
@@ -47,20 +47,35 @@ freecell.CARD_SUITS = {
 
 freecell.CARD_IMAGE = 'assets/cards2.png';
 
-freecell.callNewGame = function() {
-	freecell.newGame();
+freecell.running = false;
+
+freecell.startStop = function() {
+	if (freecell.running) {
+		// Stop game if running:
+		freecell.running = false;
+		// Show the game over panel
+		var fade = new lime.animation.FadeTo(1).setDuration(1);
+		this.overpanel.runAction(fade);
+	} else {
+		// Start new game if stopped:
+		freecell.running = true;
+		freecell.newGame();
+	}
 };
 
 freecell.log = new Array();
 
 // entry point
 freecell.start = function(){
+	// Running or stopped status
+	freecell.running = true;
+	
 	// M3W
 	var director;
 	if (typeof m3w === 'object') {
 		// Running in framework environment
 		freecell.m3w = true;
-		m3w.events.setCallback('start',freecell.callNewGame);
+		m3w.events.setCallback('start',freecell.startStop);
 		director = new lime.Director(m3w.container, freecell.WIDTH, freecell.HEIGHT);
 	} else {
 		// Standalone version -- without framework
@@ -131,12 +146,18 @@ freecell.start = function(){
 			.setPosition(freecell.MARGIN_LEFT + (i+freecell.RESERVE_COUNT)*150, 10);
 		this.layer.appendChild(this.foundations[i]);
 	}
-	
+
 	// Create the "game won!" panel. (don't show it yet!).
-	this.wonpanel = new freecell.Wonpanel(800, 400, "Congratulations!")
+	this.wonpanel = new freecell.Textpanel(800, 400, "Congratulations!")
 		.setFill("#cecece")
 		.setOpacity(0);
 	this.layer.appendChild(this.wonpanel);
+	
+	// Create the "game over!" panel. (don't show it yet!).
+	this.overpanel = new freecell.Textpanel(800, 400, "Game over!")
+		.setFill("#cecece")
+		.setOpacity(0);
+	this.layer.appendChild(this.overpanel);
 	
 	// Start a new game
 	freecell.newGame();
@@ -202,6 +223,8 @@ freecell.undo = function () {
 freecell.newGame = function () {
 	// Hide the game won panel
 	this.wonpanel.setOpacity(0);
+	// Hide the game over panel
+	this.overpanel.setOpacity(0);
 	
 	// Create the log
 	this.undoLog = new Array();
