@@ -99,8 +99,9 @@ freecell.start = function(){
 		goog.events.listen(this.btnNewGame,'click',function(e){
 		    freecell.newGame();
 		});
+		this.layer.appendChild(this.btnNewGame);
 	}
-	this.layer.appendChild(this.btnNewGame);
+	
 	this.btnUndo = new lime.GlossyButton("Visszavonás").setSize(120, 40).setPosition(1040, 740);
 	goog.events.listen(this.btnUndo,'click',function(e){
 	    freecell.undo();
