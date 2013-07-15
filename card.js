@@ -67,6 +67,10 @@ freecell.Card.MakeCard = function(suit, value) {
 	goog.events.listen(card, ['mousedown','touchstart'], function(e){
 		e.event.stopPropagation();
 		
+		if(!freecell.running) {
+			return;
+		}
+		
 		// Is substack valid solitaire stack?
 		if (!card.stack.CanMove(card)) {
 			console.log("Cant move substack!");
