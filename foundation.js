@@ -30,24 +30,24 @@ goog.inherits(freecell.Foundation, lime.Sprite);
 /**
  * Is it valid to put the given card on the stack?
  * @param card
- * @returns {Boolean}
+ * @returns 0 if valid, error code (>0) otherwise
  */
 freecell.Foundation.prototype.IsValid = function(cards) {
 	if (cards.length > 1)
-		return false;
+		return freecell.LogEntry.LogCode.INVALID_PLAY;
 	var card = cards[0];
 	
 	// If foundation is empty
 	if (this.cards.length == 0) {
 		if (card.value == 0)
-			return true;
+			return 0;
 	} else {
 	// If not empty
 		var top = this.TopCard();
 		if (top.suit == card.suit && top.value == card.value - 1)
-			return true;
+			return 0;
 	}
-	return false;
+	return freecell.LogEntry.LogCode.INVALID_PLAY;
 };
 
 freecell.Foundation.prototype.CanMove = function(card) {

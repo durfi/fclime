@@ -35,10 +35,12 @@ freecell.Deck.prototype.Shuffle = function(seed) {
 		Math.seedrandom(seed);
 	} else {
 		Math.seedrandom();
+		seed = Math.floor((Math.random()*10000000)+1);
+		Math.seedrandom(seed);
 	}
 	this.cards = shuffle(this.cards);
 	Math.seedrandom();
-	// TODO: seeding!!!
+	return seed;
 };
 
 /**

@@ -39,7 +39,7 @@ freecell.Stack.prototype.getName = function() {
 /**
  * Is it valid to put the given card on the stack?
  * @param card
- * @returns {Boolean}
+ * @returns 0 if valid, error code (>0) otherwise
  */
 freecell.Stack.prototype.IsValid = function(cards) {
 	// Can't be moved if there aren't enough free places
@@ -64,22 +64,22 @@ freecell.Stack.prototype.IsValid = function(cards) {
 		emptyStacks --;
 	// (number of movable cards <= (1 + number of empty freecells) * 2 ^ (number of empty columns)
 	if (numberOfMovedCards > (1+emptyFreeCells)*(Math.pow(2,emptyStacks)))
-		return false;
+		return freecell.LogEntry.LogCode.INVALID_PLAY_NOT_ENOUGH_FREE;
 	
 	// Valid if the stack is empty
 	if (this.cards.length == 0)
-		return true;
+		return 0;
 	
 	// Valid if the color is different and the value is one less
 	var card = cards[0];
 	var top = this.TopCard();
 	if ((top.suit % 2) != (card.suit % 2)
 			&& top.value == card.value + 1) {
-		return true;
+		return 0;
 	}
 	
 	// Otherwise its invalid
-	return false; 
+	return freecell.LogEntry.LogCode.INVALID_PLAY; 
 };
 
 /**

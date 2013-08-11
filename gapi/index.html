@@ -1,0 +1,92 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>FreeCell</title>
+<style type="text/css">
+  h1 {
+    color: #fefefe;
+    display: inline;
+  }
+  
+  #profile_box {
+		position: fixed;
+		bottom: 0px;
+		left: 0px;
+		height: 50px;
+		background-color: #2f2f2f;
+		padding: 5px 10px 5px 10px;
+  }
+  
+  #profile_img {
+		display: inline;
+		width: 50px;
+		height: 50px;
+  }
+</style>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+<script type="text/javascript" src="freecell-c.js"></script>
+<script type="text/javascript">
+var googleclientid = "undef";
+function signinCallback(authResult) {
+  if (authResult['access_token']) {
+    // Successfully authorized
+    // Hide the sign-in button now that the user is authorized
+    $('body').empty();
+    $('body').css('background-color', '#008300');
+    console.log(authResult);
+    
+    gapi.client.load('plus', 'v1', function() {
+    	var request = gapi.client.plus.people.get({
+ 	      'userId' : 'me'
+ 	    });
+    
+ 	    request.execute(function(resp) {
+ 	      var profile_box = $('<div/>', {'id': 'profile_box'});
+ 	      var profile_img = $('<img/>', {'id': 'profile_img', 'src': resp.image.url})
+ 	      var profile_name = $('<h1>'+resp.displayName+'</h1>');
+ 	      profile_box.append(profile_img).append(profile_name);
+ 	      $('body').append(profile_box);
+ 	      
+ 	      console.log('ID: ' + resp.id);
+ 	      googleclientid = resp.id;
+ 	      console.log('Display Name: ' + resp.displayName);
+ 	      console.log('Image URL: ' + resp.image.url);
+ 	      console.log('Profile URL: ' + resp.url);
+ 	    });
+    });
+		
+    freecell.start();
+  } else if (authResult['error']) {
+    // There was an error.
+    // Possible error codes:
+    //   "access_denied" - User denied access to your app
+    //   "immediate_failed" - Could not automatically log in the user
+    console.log('There was an error: ' + authResult['error']);
+  }
+}
+</script>
+</head>
+<body style="background-color: #cecece">
+  <div style="width: 480px; margin: 0px auto; background-color: #7e7e7e; border: 3px solid black">
+    <p>Please sign in:</p>
+		<span id="signinButton">
+		  <span
+		    class="g-signin"
+		    data-callback="signinCallback"
+		    data-clientid="959651458778.apps.googleusercontent.com"
+		    data-cookiepolicy="single_host_origin"
+		    data-requestvisibleactions="http://schemas.google.com/AddActivity"
+		    data-scope="https://www.googleapis.com/auth/plus.login">
+		  </span>
+		</span>
+  </div>
+	<script type="text/javascript">
+		(function() {
+			var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+			po.src = 'https://apis.google.com/js/client:plusone.js';
+			var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+		})();
+	</script>
+</body>
+</html>

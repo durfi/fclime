@@ -49,16 +49,20 @@ freecell.CARD_IMAGE = 'assets/cards2.png';
 
 freecell.running = false;
 
+freecell.overpanel = null;
+freecell.director = null;
+freecell.layer = null;
+
 freecell.startStop = function() {
 	if (freecell.running) {
 		// Stop game if running:
 		freecell.running = false;
 		// Show the game over panel
+		freecell.layer.setChildIndex(freecell.overpanel,freecell.layer.getNumberOfChildren()-1);
 		var fade = new lime.animation.FadeTo(1).setDuration(1);
-		this.overpanel.runAction(fade);
+		freecell.overpanel.runAction(fade);
 	} else {
 		// Start new game if stopped:
-		freecell.running = true;
 		freecell.newGame();
 	}
 };
@@ -100,13 +104,13 @@ freecell.start = function(){
 
 	// Create game scene
 	var gameScene = new lime.Scene;
-	this.layer = new lime.Layer().setPosition(10, 0);
-	gameScene.appendChild(this.layer);
+	freecell.layer = new lime.Layer().setPosition(10, 0);
+	gameScene.appendChild(freecell.layer);
 	
 	// Create background
 	var background = new lime.Sprite().setAnchorPoint(0,0).setPosition(0,0)
 		.setSize(freecell.WIDTH, freecell.HEIGHT).setFill('#008300');
-	this.layer.appendChild(background);
+	freecell.layer.appendChild(background);
 	
 	// Create the buttons
 	if (!freecell.m3w) {
@@ -114,21 +118,21 @@ freecell.start = function(){
 		goog.events.listen(this.btnNewGame,'click',function(e){
 		    freecell.newGame();
 		});
-		this.layer.appendChild(this.btnNewGame);
+		freecell.layer.appendChild(this.btnNewGame);
 	}
 	
 	this.btnUndo = new lime.GlossyButton("Visszavonás").setSize(120, 40).setPosition(1040, 740);
 	goog.events.listen(this.btnUndo,'click',function(e){
 	    freecell.undo();
 	});
-	this.layer.appendChild(this.btnUndo);
+	freecell.layer.appendChild(this.btnUndo);
 	
 	// Create the stacks
 	this.stacks = new Array();
 	for (var i = 0; i < freecell.STACK_COUNT; i ++) {
 		this.stacks[i] = new freecell.Stack(i, 120, 500, freecell.STACK_COLOR)
 			.setPosition(freecell.MARGIN_LEFT + i * 150, 200);
-		this.layer.appendChild(this.stacks[i]);
+		freecell.layer.appendChild(this.stacks[i]);
 	}
 	
 	// Create the free cells
@@ -136,7 +140,7 @@ freecell.start = function(){
 	for (var i = 0; i < freecell.RESERVE_COUNT; i ++) {
 		this.reserves[i] = new freecell.Reserve(i, 120, 160, freecell.RESERVE_COLOR)
 			.setPosition(freecell.MARGIN_LEFT + i*150, 10);
-		this.layer.appendChild(this.reserves[i]);
+		freecell.layer.appendChild(this.reserves[i]);
 	}
 	
 	// Create the foundations
@@ -144,20 +148,21 @@ freecell.start = function(){
 	for (var i = 0; i < freecell.FOUNDATION_COUNT; i ++) {
 		this.foundations[i] = new freecell.Foundation(i, 120, 160, freecell.FOUNDATION_COLOR)
 			.setPosition(freecell.MARGIN_LEFT + (i+freecell.RESERVE_COUNT)*150, 10);
-		this.layer.appendChild(this.foundations[i]);
+		freecell.layer.appendChild(this.foundations[i]);
 	}
 
 	// Create the "game won!" panel. (don't show it yet!).
 	this.wonpanel = new freecell.Textpanel(800, 400, "Congratulations!")
 		.setFill("#cecece")
 		.setOpacity(0);
-	this.layer.appendChild(this.wonpanel);
+	freecell.layer.appendChild(this.wonpanel);
 	
 	// Create the "game over!" panel. (don't show it yet!).
-	this.overpanel = new freecell.Textpanel(800, 400, "Game over!")
+	freecell.overpanel = new freecell.Textpanel(800, 400, "Game over!")
 		.setFill("#cecece")
 		.setOpacity(0);
-	this.layer.appendChild(this.overpanel);
+	freecell.layer.appendChild(freecell.overpanel);
+	freecell.layer.setChildIndex(freecell.overpanel,freecell.layer.getNumberOfChildren()-1);
 	
 	// Start a new game
 	freecell.newGame();
@@ -200,6 +205,8 @@ freecell.isWon = function() {
  * Undo last move
  */
 freecell.undo = function () {
+	if (!freecell.running)
+		return;
 	if (this.undoLog == null) 
 		return;
 	if (this.undoLog.length == 0)
@@ -212,7 +219,7 @@ freecell.undo = function () {
 	
 	// Move the cards!
 	for (var i = 0; i < cards.length; i ++) {
-		this.layer.setChildIndex(cards[i],this.layer.getNumberOfChildren()-1);
+		freecell.layer.setChildIndex(cards[i],freecell.layer.getNumberOfChildren()-1);
 		cards[i].MoveToStack(lastMove.from);
 	}
 };
@@ -221,6 +228,8 @@ freecell.undo = function () {
  * Start new game.
  */
 freecell.newGame = function () {
+	freecell.running = true;
+	
 	// Hide the game won panel
 	this.wonpanel.setOpacity(0);
 	// Hide the game over panel
@@ -247,7 +256,7 @@ freecell.newGame = function () {
 	// If this isn't the first game, delete the previous cards.
 	if (this.deck != null) {
 		for (var i = 0; i < this.deck.cards.length; i ++) {
-			this.layer.removeChild(this.deck.cards[i]);
+			freecell.layer.removeChild(this.deck.cards[i]);
 		}
 	}
 	

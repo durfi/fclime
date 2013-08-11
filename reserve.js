@@ -38,13 +38,13 @@ freecell.Reserve.prototype.getName = function() {
 /**
  * Is it valid to put the given card on the stack?
  * @param card
- * @returns {Boolean}
+ * @returns 0 if valid, error code (>0) otherwise
  */
 freecell.Reserve.prototype.IsValid = function(cards) {
 	if (this.card == null && cards.length == 1)
-		return true;
+		return 0;
 	
-	return false;
+	return freecell.LogEntry.LogCode.INVALID_PLAY;
 };
 
 freecell.Reserve.prototype.CanMove = function(card) {
