@@ -67,10 +67,6 @@ freecell.Card.MakeCard = function(suit, value) {
 	goog.events.listen(card, ['mousedown','touchstart'], function(e){
 		e.event.stopPropagation();
 		
-		if(!freecell.running) {
-			return;
-		}
-		
 		// Is substack valid solitaire stack?
 		if (!card.stack.CanMove(card)) {
 			console.log("Cant move substack!");
@@ -112,22 +108,34 @@ freecell.Card.MakeCard = function(suit, value) {
 			// Get the target stack
 			var dropTarget = e.activeDropTarget;
 			
-			if (! dropTarget.IsValid(draggedCards)) {
-				console.log("Invalid!");
+			// Is the move valid or not?
+			var valid = dropTarget.IsValid(draggedCards);
+			if (valid > 0) {
+				// Invalid move
+				var logEntry = new freecell.PlayEntry( valid,
+						draggedCards[0].stack,
+						dropTarget,
+						draggedCards[0]);
+				freecell.log.push(logEntry.toJson());
+//				console.log("Invalid ("+dropTarget.IsValid(draggedCards)+")!");
 				dropTarget = draggedCards[0].stack;
 				console.log(freecell.log);
 			} else {
-				freecell.log.push(
-					new freecell.LogEntry(draggedCards[0].stack,
+				// Valid move
+				var code = freecell.LogEntry.LogCode.VALID_PLAY_TO_TABLEAU;
+				if (dropTarget instanceof freecell.Reserve) {
+					code = freecell.LogEntry.LogCode.VALID_PLAY_TO_RESERVE;
+				}
+				if (dropTarget instanceof freecell.Foundation) {
+					code = freecell.LogEntry.LogCode.VALID_PLAY_TO_FOUNDATIONS;
+				}
+				var logEntry = new freecell.PlayEntry( code,
+						draggedCards[0].stack,
 						dropTarget,
-						draggedCards[0])
-				);
-				freecell.undoLog.push(
-					new freecell.LogEntry(draggedCards[0].stack,
-						dropTarget,
-						draggedCards[0])
-				);
-				console.log("Valid: "+draggedCards[0].stack.getName()+", "+draggedCards[0].toString()+" > "+dropTarget.getName());
+						draggedCards[0]);
+				freecell.log.push(logEntry.toJson());
+				freecell.undoLog.push(logEntry);
+//				console.log("Valid: "+draggedCards[0].stack.getName()+", "+draggedCards[0].toString()+" > "+dropTarget.getName());
 			}
 			
 			// Move the cards!
@@ -138,7 +146,12 @@ freecell.Card.MakeCard = function(suit, value) {
 			// Check if game is won
 			if (freecell.isWon()) {
 				// Display congratulations
+				// Show the game won panel
+				var fade = new lime.animation.FadeTo(1).setDuration(1);
+				freecell.wonpanel.runAction(fade);
 				
+				var logEntry = new freecell.LogEntry(freecell.LogEntry.LogCode.GAME_WON, null);
+				freecell.log.push(logEntry.toJson());
 			}
 		}); // End of dropping to target stack
 		

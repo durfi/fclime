@@ -18,7 +18,13 @@ goog.require('freecell.Deck');
 goog.require('freecell.Reserve');
 goog.require('freecell.Foundation');
 goog.require('freecell.LogEntry');
+goog.require('freecell.PlayEntry');
 goog.require('freecell.Textpanel');
+goog.require('goog.net.XhrIo');
+goog.require('goog.json');
+goog.require('goog.events');
+goog.require("goog.structs.Map");
+goog.require("goog.Uri.QueryData");
 
 freecell.WIDTH = 1280;
 freecell.HEIGHT = 768;
@@ -49,20 +55,16 @@ freecell.CARD_IMAGE = 'assets/cards2.png';
 
 freecell.running = false;
 
-freecell.overpanel = null;
-freecell.director = null;
-freecell.layer = null;
-
 freecell.startStop = function() {
 	if (freecell.running) {
 		// Stop game if running:
 		freecell.running = false;
 		// Show the game over panel
-		freecell.layer.setChildIndex(freecell.overpanel,freecell.layer.getNumberOfChildren()-1);
 		var fade = new lime.animation.FadeTo(1).setDuration(1);
-		freecell.overpanel.runAction(fade);
+		this.overpanel.runAction(fade);
 	} else {
 		// Start new game if stopped:
+		freecell.running = true;
 		freecell.newGame();
 	}
 };
@@ -104,13 +106,13 @@ freecell.start = function(){
 
 	// Create game scene
 	var gameScene = new lime.Scene;
-	freecell.layer = new lime.Layer().setPosition(10, 0);
-	gameScene.appendChild(freecell.layer);
+	this.layer = new lime.Layer().setPosition(10, 0);
+	gameScene.appendChild(this.layer);
 	
 	// Create background
 	var background = new lime.Sprite().setAnchorPoint(0,0).setPosition(0,0)
 		.setSize(freecell.WIDTH, freecell.HEIGHT).setFill('#008300');
-	freecell.layer.appendChild(background);
+	this.layer.appendChild(background);
 	
 	// Create the buttons
 	if (!freecell.m3w) {
@@ -118,21 +120,21 @@ freecell.start = function(){
 		goog.events.listen(this.btnNewGame,'click',function(e){
 		    freecell.newGame();
 		});
-		freecell.layer.appendChild(this.btnNewGame);
+		this.layer.appendChild(this.btnNewGame);
 	}
 	
 	this.btnUndo = new lime.GlossyButton("Visszavonás").setSize(120, 40).setPosition(1040, 740);
 	goog.events.listen(this.btnUndo,'click',function(e){
 	    freecell.undo();
 	});
-	freecell.layer.appendChild(this.btnUndo);
+	this.layer.appendChild(this.btnUndo);
 	
 	// Create the stacks
 	this.stacks = new Array();
 	for (var i = 0; i < freecell.STACK_COUNT; i ++) {
 		this.stacks[i] = new freecell.Stack(i, 120, 500, freecell.STACK_COLOR)
 			.setPosition(freecell.MARGIN_LEFT + i * 150, 200);
-		freecell.layer.appendChild(this.stacks[i]);
+		this.layer.appendChild(this.stacks[i]);
 	}
 	
 	// Create the free cells
@@ -140,7 +142,7 @@ freecell.start = function(){
 	for (var i = 0; i < freecell.RESERVE_COUNT; i ++) {
 		this.reserves[i] = new freecell.Reserve(i, 120, 160, freecell.RESERVE_COLOR)
 			.setPosition(freecell.MARGIN_LEFT + i*150, 10);
-		freecell.layer.appendChild(this.reserves[i]);
+		this.layer.appendChild(this.reserves[i]);
 	}
 	
 	// Create the foundations
@@ -148,21 +150,20 @@ freecell.start = function(){
 	for (var i = 0; i < freecell.FOUNDATION_COUNT; i ++) {
 		this.foundations[i] = new freecell.Foundation(i, 120, 160, freecell.FOUNDATION_COLOR)
 			.setPosition(freecell.MARGIN_LEFT + (i+freecell.RESERVE_COUNT)*150, 10);
-		freecell.layer.appendChild(this.foundations[i]);
+		this.layer.appendChild(this.foundations[i]);
 	}
 
 	// Create the "game won!" panel. (don't show it yet!).
 	this.wonpanel = new freecell.Textpanel(800, 400, "Congratulations!")
 		.setFill("#cecece")
 		.setOpacity(0);
-	freecell.layer.appendChild(this.wonpanel);
+	this.layer.appendChild(this.wonpanel);
 	
 	// Create the "game over!" panel. (don't show it yet!).
-	freecell.overpanel = new freecell.Textpanel(800, 400, "Game over!")
+	this.overpanel = new freecell.Textpanel(800, 400, "Game over!")
 		.setFill("#cecece")
 		.setOpacity(0);
-	freecell.layer.appendChild(freecell.overpanel);
-	freecell.layer.setChildIndex(freecell.overpanel,freecell.layer.getNumberOfChildren()-1);
+	this.layer.appendChild(this.overpanel);
 	
 	// Start a new game
 	freecell.newGame();
@@ -192,9 +193,7 @@ freecell.isWon = function() {
 		}
 	}
 	
-	// Show the game won panel
-	var fade = new lime.animation.FadeTo(1).setDuration(1);
-	this.wonpanel.runAction(fade);
+
 	
 	// freecell.director.setPaused(true);
 	
@@ -205,8 +204,6 @@ freecell.isWon = function() {
  * Undo last move
  */
 freecell.undo = function () {
-	if (!freecell.running)
-		return;
 	if (this.undoLog == null) 
 		return;
 	if (this.undoLog.length == 0)
@@ -219,8 +216,46 @@ freecell.undo = function () {
 	
 	// Move the cards!
 	for (var i = 0; i < cards.length; i ++) {
-		freecell.layer.setChildIndex(cards[i],freecell.layer.getNumberOfChildren()-1);
+		this.layer.setChildIndex(cards[i],this.layer.getNumberOfChildren()-1);
 		cards[i].MoveToStack(lastMove.from);
+	}
+	
+	freecell.log.push( (new freecell.LogEntry(
+			freecell.LogEntry.LogCode.UNDO,
+			null)).toJson()
+	);
+};
+
+/**
+ * Send the log to the server
+ */
+freecell.postLog = function () {
+	// When not running in the M3W environment,
+	// post the log to own server.
+	alert('posting');
+	if (!freecell.m3w) {
+		try {
+			if ( freecell.log.length != 0 ) {
+				var request = new goog.net.XhrIo();
+				
+				var data = goog.Uri.QueryData.createFromMap(new goog.structs.Map({
+					usr: googleclientid,
+					msg: goog.json.serialize(freecell.log)
+					}));
+				
+				goog.events.listen(request, 'complete', function() {
+					console.log(request.getResponse());
+				});
+				
+				request.send('update.php', 'POST', data.toString());
+			}
+		} catch (err) {
+			console.log("Error while uploading log: " + err.message);
+		}
+	}
+	// When running in M3W, give the log to the framework
+	else {
+		// m3w.log?
 	}
 };
 
@@ -228,7 +263,8 @@ freecell.undo = function () {
  * Start new game.
  */
 freecell.newGame = function () {
-	freecell.running = true;
+	// Send log to the server
+	freecell.postLog();
 	
 	// Hide the game won panel
 	this.wonpanel.setOpacity(0);
@@ -237,6 +273,7 @@ freecell.newGame = function () {
 	
 	// Create the log
 	this.undoLog = new Array();
+	freecell.log = new Array();
 	
 	// Create the stacks
 	for (var i = 0; i < freecell.STACK_COUNT; i ++) {
@@ -256,14 +293,20 @@ freecell.newGame = function () {
 	// If this isn't the first game, delete the previous cards.
 	if (this.deck != null) {
 		for (var i = 0; i < this.deck.cards.length; i ++) {
-			freecell.layer.removeChild(this.deck.cards[i]);
+			this.layer.removeChild(this.deck.cards[i]);
 		}
 	}
 	
 	// Create, shuffle and deal the deck
 	this.deck = new freecell.Deck(this);
-	this.deck.Shuffle(null);
+	var seed = this.deck.Shuffle(null);
 	this.deck.Deal();
+	
+	freecell.log.push( (new freecell.LogEntry(
+			freecell.LogEntry.LogCode.NEW_GAME,
+			{"seed": seed})).toJson()
+			);
+	console.log("New game. Seed: "+seed+".");
 };
 
 //this is required for outside access after code is compiled in ADVANCED_COMPILATIONS mode
