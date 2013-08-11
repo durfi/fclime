@@ -232,7 +232,6 @@ freecell.undo = function () {
 freecell.postLog = function () {
 	// When not running in the M3W environment,
 	// post the log to own server.
-	alert('posting');
 	if (!freecell.m3w) {
 		try {
 			if ( freecell.log.length != 0 ) {
