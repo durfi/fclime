@@ -81,7 +81,13 @@ freecell.start = function(){
 	if (typeof m3w === 'object') {
 		// Running in framework environment
 		freecell.m3w = true;
-		m3w.events.setCallback('start',freecell.startStop);
+		// Register callback methods for the framework buttons
+		m3w.setCallback('start',freecell.startStop);
+		m3w.setCallback('pause', function() {console.log('Pause!');});
+		m3w.setCallback('resume', function() {console.log('Resume!');});
+		m3w.setCallback('exit', function() {console.log('Exit!');});
+		
+		// Render to the M3W container
 		director = new lime.Director(m3w.container, freecell.WIDTH, freecell.HEIGHT);
 	} else {
 		// Standalone version -- without framework
@@ -165,9 +171,6 @@ freecell.start = function(){
 		.setOpacity(0);
 	this.layer.appendChild(this.overpanel);
 	
-	// Start a new game
-	freecell.newGame();
-	
 	// Loading scene while loading image
 	var img = new lime.fill.Image(freecell.CARD_IMAGE);
 	if (! img.isLoaded) {
@@ -179,7 +182,11 @@ freecell.start = function(){
 	} else {
 		director.replaceScene(gameScene);
 	}
-
+	
+	// Automatically start the game if not in M3W
+	if (!freecell.m3w) {
+		freecell.newGame();
+	}
 };
 
 /**
