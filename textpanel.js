@@ -22,5 +22,9 @@ freecell.Textpanel = function(width, height, text) {
 		.setAlign("center")
 		.setPosition(width/2, height/2);
 	this.appendChild(label);
+	// Can't click through
+	goog.events.listen(this, ['mousedown','touchstart'], function(e){
+		e.event.stopPropagation();
+	});
 };
 goog.inherits(freecell.Textpanel, lime.Sprite);

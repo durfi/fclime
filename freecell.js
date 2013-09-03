@@ -53,26 +53,45 @@ freecell.CARD_SUITS = {
 
 freecell.CARD_IMAGE = 'assets/cards2.png';
 
-freecell.running = false;
+if (typeof __ !== 'function') __ = function(_){return _;};
 
-freecell.startStop = function() {
-	if (freecell.running) {
-		// Stop game if running:
-		freecell.running = false;
-		// Show the game over panel
-		var fade = new lime.animation.FadeTo(1).setDuration(1);
-		this.overpanel.runAction(fade);
+freecell.running = false;
+freecell.firstNewGame = true;
+
+freecell.newGameButton = function(params) {
+	console.log("freecell.newGameButton");
+	if (freecell.firstNewGame) {
+		freecell.firstNewGame = false;
+		$('#fcellGameContent').empty();
+		freecell.start(params);
 	} else {
-		// Start new game if stopped:
+		freecell.newGame(params);
+	}
+};
+
+freecell.pause = function() {
+	if (freecell.running) {
+		freecell.running = false;
+		// Show the paused panel
+		freecell.layer.setChildIndex(freecell.pausepanel,freecell.layer.getNumberOfChildren()-1);
+		var fade = new lime.animation.FadeTo(1).setDuration(1);
+		freecell.pausepanel.runAction(fade);
+	}
+};
+
+freecell.resume = function() {
+	if (!freecell.running) {
 		freecell.running = true;
-		freecell.newGame();
+		// Hide the paused panel
+		var fade = new lime.animation.FadeTo(0).setDuration(1);
+		freecell.pausepanel.runAction(fade);
 	}
 };
 
 freecell.log = new Array();
-
 // entry point
-freecell.start = function(){
+freecell.start = function(params){
+	console.log("freecell.start");
 	// Running or stopped status
 	freecell.running = true;
 	
@@ -82,13 +101,12 @@ freecell.start = function(){
 		// Running in framework environment
 		freecell.m3w = true;
 		// Register callback methods for the framework buttons
-		m3w.setCallback('start',freecell.startStop);
-		m3w.setCallback('pause', function() {console.log('Pause!');});
-		m3w.setCallback('resume', function() {console.log('Resume!');});
-		m3w.setCallback('exit', function() {console.log('Exit!');});
+		m3w.setCallback('pause', freecell.pause);
+		m3w.setCallback('resume', freecell.resume);
+		m3w.setCallback('exit', freecell.postLog);
 		
 		// Render to the M3W container
-		director = new lime.Director(m3w.container, freecell.WIDTH, freecell.HEIGHT);
+		director = new lime.Director(document.getElementById('fcellGameContent'), freecell.WIDTH, freecell.HEIGHT);
 	} else {
 		// Standalone version -- without framework
 		freecell.m3w = false;
@@ -129,7 +147,7 @@ freecell.start = function(){
 		this.layer.appendChild(this.btnNewGame);
 	}
 	
-	this.btnUndo = new lime.GlossyButton("Visszavonás").setSize(120, 40).setPosition(1040, 740);
+	this.btnUndo = new lime.GlossyButton(__("Undo")).setSize(120, 40).setPosition(1040, 740);
 	goog.events.listen(this.btnUndo,'click',function(e){
 	    freecell.undo();
 	});
@@ -166,10 +184,16 @@ freecell.start = function(){
 	this.layer.appendChild(this.wonpanel);
 	
 	// Create the "game over!" panel. (don't show it yet!).
-	this.overpanel = new freecell.Textpanel(800, 400, "Game over!")
+	this.overpanel = new freecell.Textpanel(freecell.WIDTH, freecell.HEIGHT, "Game over!")
 		.setFill("#cecece")
 		.setOpacity(0);
 	this.layer.appendChild(this.overpanel);
+
+	// Create the "game over!" panel. (don't show it yet!).
+	freecell.pausepanel = new freecell.Textpanel(freecell.WIDTH, freecell.HEIGHT, "Game paused.")
+		.setFill("#cecece")
+		.setOpacity(0);
+	this.layer.appendChild(freecell.pausepanel);
 	
 	// Loading scene while loading image
 	var img = new lime.fill.Image(freecell.CARD_IMAGE);
@@ -183,10 +207,7 @@ freecell.start = function(){
 		director.replaceScene(gameScene);
 	}
 	
-	// Automatically start the game if not in M3W
-	if (!freecell.m3w) {
-		freecell.newGame();
-	}
+	freecell.newGame(params);
 };
 
 /**
@@ -268,7 +289,10 @@ freecell.postLog = function () {
 /**
  * Start new game.
  */
-freecell.newGame = function () {
+freecell.newGame = function (params) {
+	console.log("freecell.newGame");
+	freecell.running = true;
+	
 	// Send log to the server
 	freecell.postLog();
 	
@@ -276,6 +300,8 @@ freecell.newGame = function () {
 	this.wonpanel.setOpacity(0);
 	// Hide the game over panel
 	this.overpanel.setOpacity(0);
+	// Hide the game paused panel
+	this.pausepanel.setOpacity(0);
 	
 	// Create the log
 	this.undoLog = new Array();
