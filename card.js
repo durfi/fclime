@@ -52,6 +52,52 @@ freecell.Card.prototype.MoveToStack = function(stack) {
 };
 
 /**
+ * This function is called when there was a double click
+ * (or now actually a single click) on a card. This moves the card to
+ * the foundations or to the reserves if poissible.
+ */
+freecell.Card.prototype.playDoubleClick = function() {
+	// Create an array from the card, so we can call stack.IsValid()
+	var  card = this;
+
+	var cards = [card];
+	console.log(card.stack.TopCard().toString());
+	if (card.stack.TopCard() != card) {
+		// Click was not on top card
+		console.log("not top card");
+		return;
+	}
+
+	// Can be moved?
+	var target = null;
+	for (var i = 0; i < freecell.RESERVE_COUNT; i ++) {
+		if (freecell.reserves[i].IsValid(cards) == 0) {
+			target = freecell.reserves[i];
+			break;
+		}
+	}
+	for (var i = 0; i < freecell.FOUNDATION_COUNT; i ++) {
+		console.log("f"+i+": "+freecell.foundations[i].IsValid(cards));
+		if (freecell.foundations[i].IsValid(cards) == 0) {
+			target = freecell.foundations[i];
+			break;
+		}
+	}
+	if (target == null) {
+		// Can't be moved, so do nothing
+		return;
+	}
+
+	// Remove from stack
+	cards = card.stack.SubStack(card);
+
+	// Move to destination
+	cards[0].MoveToStack(target);
+
+	// TODO: LOGGING AND UNDO, DONT LET MOVE FROM RESERVE OR FOUNDATION
+}
+
+/**
  * Return a new card.
  * @param suit Suit of the card.
  * @param value Value of the card.
@@ -64,113 +110,137 @@ freecell.Card.MakeCard = function(suit, value) {
 			140, 
 			suit,
 			value);
+
 	goog.events.listen(card, ['mousedown','touchstart'], function(e){
 		e.event.stopPropagation();
-		
-		// Is substack valid solitaire stack?
-		if (!card.stack.CanMove(card)) {
-			console.log("Cant move substack!");
-			return;
-		}
-		
-		// Get dragged cards
-		var draggedCards = new Array();
-		if (card.stack != null) {
-			draggedCards = card.stack.SubStack(card);
-		} else {
-			draggedCards[0] = card;
-		}
+		var moved = false;
+		e.swallow(['mousemove', 'touchmove'], function(e) {
+			// Start dragging the first time it is moved
+			if (!moved) {
 
-		// Start dragging them
-		var drags = new Array();
-		for(var i = 0; i < draggedCards.length; i ++) {
-			drags[i] = e.startDrag(false, null, draggedCards[i]);
-			// Draw the lowest card on top
-			freecell.layer.setChildIndex(draggedCards[i],freecell.layer.getNumberOfChildren()-1);
-		}
 
-		// Every stack is a target:
-		for (var i = 0; i < freecell.STACK_COUNT; i ++) {
-			drags[0].addDropTarget(freecell.stacks[i]);
-		}
-		for (var i = 0; i < freecell.RESERVE_COUNT; i ++) {
-			drags[0].addDropTarget(freecell.reserves[i]);
-		}
-		for (var i = 0; i < freecell.FOUNDATION_COUNT; i ++) {
-			drags[0].addDropTarget(freecell.foundations[i]);
-		}
 
-		// Drop into target stack
-		goog.events.listen(drags[0], lime.events.Drag.Event.DROP, function(e){
-			// Disable default move animation
-			e.stopPropagation();
-			
-			// Get the target stack
-			var dropTarget = e.activeDropTarget;
-			
-			// Is the move valid or not?
-			var valid = dropTarget.IsValid(draggedCards);
-			if (valid > 0) {
-				// Invalid move
-				var logEntry = new freecell.PlayEntry( valid,
-						draggedCards[0].stack,
-						dropTarget,
-						draggedCards[0]);
-				freecell.log.push(logEntry.toJson());
-//				console.log("Invalid ("+dropTarget.IsValid(draggedCards)+")!");
-				dropTarget = draggedCards[0].stack;
-				console.log(freecell.log);
-			} else {
-				// Valid move
-				var code = freecell.LogEntry.LogCode.VALID_PLAY_TO_TABLEAU;
-				if (dropTarget instanceof freecell.Reserve) {
-					code = freecell.LogEntry.LogCode.VALID_PLAY_TO_RESERVE;
+
+
+				// Is substack valid solitaire stack?
+				if (!card.stack.CanMove(card)) {
+					console.log("Cant move substack!");
+					return;
 				}
-				if (dropTarget instanceof freecell.Foundation) {
-					code = freecell.LogEntry.LogCode.VALID_PLAY_TO_FOUNDATIONS;
-				}
-				var logEntry = new freecell.PlayEntry( code,
-						draggedCards[0].stack,
-						dropTarget,
-						draggedCards[0]);
-				freecell.log.push(logEntry.toJson());
-				freecell.undoLog.push(logEntry);
-//				console.log("Valid: "+draggedCards[0].stack.getName()+", "+draggedCards[0].toString()+" > "+dropTarget.getName());
-			}
-			
-			// Move the cards!
-			for (var i = 0; i < draggedCards.length; i ++) {
-				draggedCards[i].MoveToStack(dropTarget);
-			}
-			
-			// Check if game is won
-			if (freecell.isWon()) {
-				// Display congratulations
-				// Show the game won panel
-				var fade = new lime.animation.FadeTo(1).setDuration(1);
-				freecell.wonpanel.runAction(fade);
 				
-				var logEntry = new freecell.LogEntry(freecell.LogEntry.LogCode.GAME_WON, null);
-				freecell.log.push(logEntry.toJson());
+				// Get dragged cards
+				var draggedCards = new Array();
+				if (card.stack != null) {
+					draggedCards = card.stack.SubStack(card);
+				} else {
+					draggedCards[0] = card;
+				}
+
+				// Start dragging them
+				var drags = new Array();
+				for(var i = 0; i < draggedCards.length; i ++) {
+					drags[i] = e.startDrag(false, null, draggedCards[i]);
+					// Draw the lowest card on top
+					freecell.layer.setChildIndex(draggedCards[i],freecell.layer.getNumberOfChildren()-1);
+				}
+
+				// Every stack is a target:
+				for (var i = 0; i < freecell.STACK_COUNT; i ++) {
+					drags[0].addDropTarget(freecell.stacks[i]);
+				}
+				for (var i = 0; i < freecell.RESERVE_COUNT; i ++) {
+					drags[0].addDropTarget(freecell.reserves[i]);
+				}
+				for (var i = 0; i < freecell.FOUNDATION_COUNT; i ++) {
+					drags[0].addDropTarget(freecell.foundations[i]);
+				}
+
+				// Drop into target stack
+				goog.events.listen(drags[0], lime.events.Drag.Event.DROP, function(e){
+					// Disable default move animation
+					e.stopPropagation();
+					
+					// Get the target stack
+					var dropTarget = e.activeDropTarget;
+					
+					// Is the move valid or not?
+					var valid = dropTarget.IsValid(draggedCards);
+					if (valid > 0) {
+						// Invalid move
+						var logEntry = new freecell.PlayEntry( valid,
+								draggedCards[0].stack,
+								dropTarget,
+								draggedCards[0]);
+						freecell.log.push(logEntry.toJson());
+		//				console.log("Invalid ("+dropTarget.IsValid(draggedCards)+")!");
+						dropTarget = draggedCards[0].stack;
+						console.log(freecell.log);
+					} else {
+						// Valid move
+						var code = freecell.LogEntry.LogCode.VALID_PLAY_TO_TABLEAU;
+						if (dropTarget instanceof freecell.Reserve) {
+							code = freecell.LogEntry.LogCode.VALID_PLAY_TO_RESERVE;
+						}
+						if (dropTarget instanceof freecell.Foundation) {
+							code = freecell.LogEntry.LogCode.VALID_PLAY_TO_FOUNDATIONS;
+						}
+						var logEntry = new freecell.PlayEntry( code,
+								draggedCards[0].stack,
+								dropTarget,
+								draggedCards[0]);
+						freecell.log.push(logEntry.toJson());
+						freecell.undoLog.push(logEntry);
+		//				console.log("Valid: "+draggedCards[0].stack.getName()+", "+draggedCards[0].toString()+" > "+dropTarget.getName());
+					}
+					
+					// Move the cards!
+					for (var i = 0; i < draggedCards.length; i ++) {
+						draggedCards[i].MoveToStack(dropTarget);
+					}
+					
+					// Check if game is won
+					if (freecell.isWon()) {
+						// Display congratulations
+						// Show the game won panel
+						var fade = new lime.animation.FadeTo(1).setDuration(1);
+						freecell.wonpanel.runAction(fade);
+						
+						var logEntry = new freecell.LogEntry(freecell.LogEntry.LogCode.GAME_WON, null);
+						freecell.log.push(logEntry.toJson());
+					}
+				}); // End of dropping to target stack
+				
+				// If not over stack
+				goog.events.listen(drags[0], lime.events.Drag.Event.CANCEL, function(e){
+					// Disable default move animation
+					e.stopPropagation();
+					
+					if (draggedCards[0].stack == null)
+						return;
+					
+					// Target is the old stack
+					var dropTarget = draggedCards[0].stack;
+					
+					// Calculate old place and move
+					for (var i = 0; i < draggedCards.length; i ++) {
+						draggedCards[i].MoveToStack(dropTarget);
+					}
+				});
+
+
+
+
+
 			}
-		}); // End of dropping to target stack
-		
-		// If not over stack
-		goog.events.listen(drags[0], lime.events.Drag.Event.CANCEL, function(e){
-			// Disable default move animation
-			e.stopPropagation();
-			
-			if (draggedCards[0].stack == null)
-				return;
-			
-			// Target is the old stack
-			var dropTarget = draggedCards[0].stack;
-			
-			// Calculate old place and move
-			for (var i = 0; i < draggedCards.length; i ++) {
-				draggedCards[i].MoveToStack(dropTarget);
+			moved = true;
+		});
+		e.swallow(['mouseup', 'touchend'], function(e) {
+			if (!moved) {
+				console.log("NEM MOZGOTT");
+				card.playDoubleClick();
 			}
 		});
+
 	});
 
 	return card;
