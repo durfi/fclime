@@ -2,6 +2,7 @@ goog.provide('freecell.Card');
 
 goog.require('lime.Sprite');
 goog.require('lime.fill.Frame');
+goog.require("freecell.LogEntry");
 
 freecell.Card = function(image, width, height, suit, value) {
 	goog.base(this);
@@ -60,15 +61,26 @@ freecell.Card.prototype.playDoubleClick = function() {
 	// Create an array from the card, so we can call stack.IsValid()
 	var  card = this;
 
+	if (card.stack instanceof freecell.Foundation) {
+		// TODO: log this event!
+		console.log("from found");
+		return;
+	}
+
+	var fromReserve = false;
+	if (card.stack instanceof freecell.Reserve) {
+		fromReserve = true;
+		code = freecell.LogEntry.LogCode.VALID_PLAY_DOUBLE_RES;
+	}
+
 	var cards = [card];
-	console.log(card.stack.TopCard().toString());
 	if (card.stack.TopCard() != card) {
 		// Click was not on top card
 		console.log("not top card");
 		return;
 	}
 
-	// Can be moved?
+	// Can it be moved?
 	var target = null;
 	for (var i = 0; i < freecell.RESERVE_COUNT; i ++) {
 		if (freecell.reserves[i].IsValid(cards) == 0) {
@@ -76,8 +88,8 @@ freecell.Card.prototype.playDoubleClick = function() {
 			break;
 		}
 	}
+
 	for (var i = 0; i < freecell.FOUNDATION_COUNT; i ++) {
-		console.log("f"+i+": "+freecell.foundations[i].IsValid(cards));
 		if (freecell.foundations[i].IsValid(cards) == 0) {
 			target = freecell.foundations[i];
 			break;
@@ -85,16 +97,37 @@ freecell.Card.prototype.playDoubleClick = function() {
 	}
 	if (target == null) {
 		// Can't be moved, so do nothing
+		// TODO: log this event!
 		return;
 	}
+
+	// TODO: LOGGING AND UNDO, DONT LET MOVE FROM RESERVE OR FOUNDATION
+	if (fromReserve && target instanceof freecell.Reserve) {
+		// todo: log this event!
+		console.log("to reserve");
+		return;
+	}
+
+	var code = freecell.LogEntry.LogCode.VALID_PLAY_DOUBLE_RES;
+	if (target instanceof freecell.Foundation) {
+		code = freecell.LogEntry.LogCode.VALID_PLAY_DOUBLE_FOUND;
+	}
+
+	var logEntry = new freecell.PlayEntry( code,
+		card.stack,
+		target,
+		card);
+	freecell.log.push(logEntry.toJson());
+	freecell.undoLog.push(logEntry);
 
 	// Remove from stack
 	cards = card.stack.SubStack(card);
 
+	// Draw this card on top
+	freecell.layer.setChildIndex(card,freecell.layer.getNumberOfChildren()-1);
+
 	// Move to destination
 	cards[0].MoveToStack(target);
-
-	// TODO: LOGGING AND UNDO, DONT LET MOVE FROM RESERVE OR FOUNDATION
 }
 
 /**
@@ -117,11 +150,6 @@ freecell.Card.MakeCard = function(suit, value) {
 		e.swallow(['mousemove', 'touchmove'], function(e) {
 			// Start dragging the first time it is moved
 			if (!moved) {
-
-
-
-
-
 				// Is substack valid solitaire stack?
 				if (!card.stack.CanMove(card)) {
 					console.log("Cant move substack!");
@@ -226,17 +254,11 @@ freecell.Card.MakeCard = function(suit, value) {
 						draggedCards[i].MoveToStack(dropTarget);
 					}
 				});
-
-
-
-
-
 			}
 			moved = true;
 		});
 		e.swallow(['mouseup', 'touchend'], function(e) {
 			if (!moved) {
-				console.log("NEM MOZGOTT");
 				card.playDoubleClick();
 			}
 		});
