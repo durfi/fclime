@@ -101,7 +101,6 @@ freecell.Card.prototype.playDoubleClick = function() {
 		return;
 	}
 
-	// TODO: LOGGING AND UNDO, DONT LET MOVE FROM RESERVE OR FOUNDATION
 	if (fromReserve && target instanceof freecell.Reserve) {
 		// todo: log this event!
 		console.log("to reserve");
@@ -128,6 +127,9 @@ freecell.Card.prototype.playDoubleClick = function() {
 
 	// Move to destination
 	cards[0].MoveToStack(target);
+
+	// Check if game is won
+	freecell.checkWon();
 }
 
 /**
@@ -227,15 +229,8 @@ freecell.Card.MakeCard = function(suit, value) {
 					}
 					
 					// Check if game is won
-					if (freecell.isWon()) {
-						// Display congratulations
-						// Show the game won panel
-						var fade = new lime.animation.FadeTo(1).setDuration(1);
-						freecell.wonpanel.runAction(fade);
-						
-						var logEntry = new freecell.LogEntry(freecell.LogEntry.LogCode.GAME_WON, null);
-						freecell.log.push(logEntry.toJson());
-					}
+					freecell.checkWon();
+
 				}); // End of dropping to target stack
 				
 				// If not over stack

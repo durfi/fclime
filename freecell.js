@@ -58,6 +58,8 @@ if (typeof __ !== 'function') __ = function(_){return _;};
 freecell.running = false;
 freecell.firstNewGame = true;
 
+freecell.startTime = 0;
+
 freecell.newGameButton = function(params) {
 	console.log("freecell.newGameButton");
 	if (freecell.firstNewGame) {
@@ -72,6 +74,9 @@ freecell.newGameButton = function(params) {
 freecell.pause = function() {
 	if (freecell.running) {
 		freecell.running = false;
+		if (freecell.m3w) {
+			freecell.timer.pauseTime();
+		}
 		// Show the paused panel
 		freecell.layer.setChildIndex(freecell.pausepanel,freecell.layer.getNumberOfChildren()-1);
 		var fade = new lime.animation.FadeTo(1).setDuration(1);
@@ -82,6 +87,9 @@ freecell.pause = function() {
 freecell.resume = function() {
 	if (!freecell.running) {
 		freecell.running = true;
+		if (freecell.m3w) {
+			freecell.timer.startTime();
+		}
 		// Hide the paused panel
 		var fade = new lime.animation.FadeTo(0).setDuration(1);
 		freecell.pausepanel.runAction(fade);
@@ -104,6 +112,8 @@ freecell.start = function(params){
 		m3w.setCallback('pause', freecell.pause);
 		m3w.setCallback('resume', freecell.resume);
 		m3w.setCallback('exit', freecell.postLog);
+
+		this.timer = params.get('timer', 'object');
 		
 		// Render to the M3W container
 		director = new lime.Director(document.getElementById('fcellGameContent'), freecell.WIDTH, freecell.HEIGHT);
@@ -215,18 +225,55 @@ freecell.start = function(params){
  * If game is won show the congratulations panel!
  */
 freecell.isWon = function() {
-	for (var i = 0; i < freecell.FOUNDATION_COUNT; i++) {
-		if (freecell.foundations[i].cards.length < 13) {
-			return false;
+	var won = true;
+	for (var i = 0; i < freecell.STACK_COUNT; i++) {
+		if (freecell.stacks[i].isEmpty()) {
+			continue;
 		}
+		if (freecell.stacks[i].CanMove(freecell.stacks[i].cards[0])) {
+			continue;
+		}
+		won = false;
+		break;
 	}
-	
-
-	
-	// freecell.director.setPaused(true);
-	
-	return true;
+	return won;
 };
+
+/**
+ * If game is won, display congratulations.
+ */
+freecell.checkWon = function() {
+	if (!freecell.isWon()) {
+		return false;
+	}
+	// Log this event
+	var logEntry = new freecell.LogEntry(freecell.LogEntry.LogCode.GAME_WON, null);
+	freecell.log.push(logEntry.toJson());
+
+	// Get the length of the game
+	var time = new Date().getTime() - freecell.startTime;
+	if (freecell.m3w) {
+		freecell.timer.pauseTime();	
+		time = freecell.timer.getTime();
+	}
+
+	// Display congratulations with $.lightbox
+	var html = $('<div align="center">');
+	html.append('<h1>' + __('Congratulations!')+'</h1><hr />');
+	// html.append('<h1>' + __('Your new coins:') +' '+ result['score'] + '<img src="./res/coin.png" height="40"/></h1>');
+	// html.append('<h2>' + __('Your coins in TOTAL:') +' '+ result['total'] + '<img src="./res/coin.png" height="30" /></h2>');
+	html.append('<h3>' + __('Number of moves:') +' '+ freecell.undoLog.length + '</h3>');
+	html.append('<h3>' + __('Elapsed time:') +' '+ (time/1000).toFixed(2) +' '+__('seconds') + '</h3>');
+	html.append('</div>');
+	$.lightbox(html, {
+		'width'       : 640,
+		'height'      : 480,
+		'autoresize'  : true,
+		'onClose' : function() {freecell.newGame(null);}
+	});
+
+	return true;
+}
 
 /**
  * Undo last move
@@ -292,7 +339,15 @@ freecell.postLog = function () {
 freecell.newGame = function (params) {
 	console.log("freecell.newGame");
 	freecell.running = true;
-	
+
+	// Save the start time
+	freecell.startTime = new Date().getTime();
+
+	if (freecell.m3w) {
+		freecell.timer.stopTime();
+		freecell.timer.startTime();
+	}
+
 	// Send log to the server
 	freecell.postLog();
 	
