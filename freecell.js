@@ -320,7 +320,6 @@ freecell.postLog = function () {
 				goog.events.listen(request, 'complete', function() {
 					console.log(request.getResponse());
 				});
-				
 				request.send('update.php', 'POST', data.toString());
 			}
 		} catch (err) {
@@ -386,12 +385,23 @@ freecell.newGame = function (params) {
 	
 	// Create, shuffle and deal the deck
 	this.deck = new freecell.Deck(this);
-	var seed = this.deck.Shuffle(null);
+	var seed = null;
+	this.deck.Shuffle(seed);
+
 	this.deck.Deal();
 	
+	var board = [];
+	for(var i = 0; i < freecell.stacks.length; i ++ ) {
+		var arr = [];
+		for (var j = 0; j < freecell.stacks[i].cards.length; j ++) {
+			arr.push(freecell.stacks[i].cards[j].toString());
+		}
+		board.push(arr);
+	}
+
 	freecell.log.push( (new freecell.LogEntry(
 			freecell.LogEntry.LogCode.NEW_GAME,
-			{"seed": seed})).toJson()
+			{"seed": seed, "board": board})).toJson()
 			);
 	console.log("New game. Seed: "+seed+".");
 };
