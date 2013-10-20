@@ -185,6 +185,8 @@ freecell.start = function(params){
 			});
 		} else if (keyCode == 74) {
 			freecell.doNextReplayMove();
+		} else if (keyCode == 75) {
+			freecell.undoReplayMove();
 		}
 	});
 
@@ -304,6 +306,7 @@ freecell.checkWon = function() {
  * Do a move given in a JSON object
  */
 freecell.doJsonMove = function (json) {
+	freecell.counterLabel.setText('Board after move'+freecell.replayIndex+'/'+freecell.replayLog.length);
 	var fromType = json.from.substring(0,1);
 	var fromNum = json.from.substring(1,2);
 	var toType = json.to.substring(0,1);
@@ -313,6 +316,8 @@ freecell.doJsonMove = function (json) {
 	var from;
 	if (fromType == 't') {
 		from = freecell.stacks[fromNum];
+	} else if (fromType == 'f') {
+		from = freecell.foundations[fromNum];
 	} else {
 		from = freecell.reserves[fromNum];
 	}
@@ -334,8 +339,6 @@ freecell.doJsonMove = function (json) {
 	}
 	var cards = from.SubStack(card);
 
-	console.log("from: " + from.getName() + ", to: " + to.getName() + ", cards: " + cards);
-
 	// Draw these cards on top
 	for(var i = 0; i < cards.length; i ++) {
 		// Draw the lowest card on top
@@ -346,9 +349,6 @@ freecell.doJsonMove = function (json) {
 	for (var i = 0; i < cards.length; i ++) {
 		cards[i].MoveToStack(to);
 	}
-
-	// Check if game is won
-	freecell.checkWon();
 }
 freecell.doNextReplayMove = function() {
 	if (freecell.replayLog == null) {
@@ -356,6 +356,17 @@ freecell.doNextReplayMove = function() {
 	}
 	var move = freecell.replayLog[freecell.replayIndex++];
 	freecell.doJsonMove(move);
+}
+freecell.undoReplayMove = function() {
+	if (freecell.replayLog == null) {
+		return;
+	}
+	if (freecell.replayIndex == 0) {
+		return;
+	}
+	var lastMove = freecell.replayLog[--freecell.replayIndex];
+	var tmp = {"from":lastMove.to, "num":lastMove.num, "to":lastMove.from};
+	freecell.doJsonMove(tmp);
 }
 
 /**
@@ -469,7 +480,7 @@ freecell.newGame = function (params) {
 	
 	// Create, shuffle and deal the deck
 	this.deck = new freecell.Deck(this);
-	var seed = 7921427;
+	var seed = null;
 	this.deck.Shuffle(seed);
 
 	this.deck.Deal();
@@ -536,6 +547,15 @@ freecell.newReplay = function () {
 
 	freecell.replayLog = moves;
 	freecell.replayIndex = 0;
+
+	freecell.counterLabel = new lime.Label().setSize(freecell.WIDTH, 40)
+		.setText('Board after move 0/'+moves.length)
+		.setFontSize(40)
+		.setFontColor("#fff")
+		.setAlign("center")
+		.setPosition(freecell.WIDTH / 2, freecell.HEIGHT - 20);
+
+	freecell.layer.appendChild(freecell.counterLabel);
 };
 
 
