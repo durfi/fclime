@@ -60,6 +60,9 @@ freecell.firstNewGame = true;
 
 freecell.startTime = 0;
 
+freecell.replayLog = null;
+freecell.replayIndex = 0;
+
 freecell.newGameButton = function(params) {
 	console.log("freecell.newGameButton");
 	if (freecell.firstNewGame) {
@@ -163,6 +166,28 @@ freecell.start = function(params){
 	});
 	this.layer.appendChild(this.btnUndo);
 	
+	// Listen for keyboard events
+	goog.events.listen(this.layer, goog.events.EventType.KEYUP, function(ev) {
+		console.log("Key:" + ev.event.keyCode);
+		var keyCode = ev.event.keyCode;
+		if (keyCode == 82) {
+			// Display textarea with lightbox
+			var html = $('<div align="center">');
+			html.append('<h1>' + __('Insert replay text:')+'</h1><hr />');
+			html.append('<textarea id="replayText">');
+			html.append('<input type="button" value="Replay!" onClick="freecell.newReplay()">');
+			html.append('</div>');
+			$.lightbox(html, {
+				'width'       : 640,
+				'height'      : 480,
+				'autoresize'  : true,
+				'onClose' : function() {}
+			});
+		} else if (keyCode == 74) {
+			freecell.doNextReplayMove();
+		}
+	});
+
 	// Create the stacks
 	this.stacks = new Array();
 	for (var i = 0; i < freecell.STACK_COUNT; i ++) {
@@ -276,6 +301,64 @@ freecell.checkWon = function() {
 }
 
 /**
+ * Do a move given in a JSON object
+ */
+freecell.doJsonMove = function (json) {
+	var fromType = json.from.substring(0,1);
+	var fromNum = json.from.substring(1,2);
+	var toType = json.to.substring(0,1);
+	var toNum = json.to.substring(1,2);
+	var num = json.num;
+
+	var from;
+	if (fromType == 't') {
+		from = freecell.stacks[fromNum];
+	} else {
+		from = freecell.reserves[fromNum];
+	}
+	var to;
+	if (toType == 't') {
+		to = freecell.stacks[toNum];
+	} else if (toType == 'f') {
+		to = freecell.foundations[toNum];
+	} else {
+		to = freecell.reserves[toNum];
+	}
+
+	// Remove from stack
+	var card;
+	if (fromType == 'r') {
+		card = from.TopCard();
+	} else {
+		card = from.cards[from.cards.length - num];
+	}
+	var cards = from.SubStack(card);
+
+	console.log("from: " + from.getName() + ", to: " + to.getName() + ", cards: " + cards);
+
+	// Draw these cards on top
+	for(var i = 0; i < cards.length; i ++) {
+		// Draw the lowest card on top
+		freecell.layer.setChildIndex(cards[i],freecell.layer.getNumberOfChildren()-1);
+	}
+
+	// Move to destination
+	for (var i = 0; i < cards.length; i ++) {
+		cards[i].MoveToStack(to);
+	}
+
+	// Check if game is won
+	freecell.checkWon();
+}
+freecell.doNextReplayMove = function() {
+	if (freecell.replayLog == null) {
+		return;
+	}
+	var move = freecell.replayLog[freecell.replayIndex++];
+	freecell.doJsonMove(move);
+}
+
+/**
  * Undo last move
  */
 freecell.undo = function () {
@@ -307,6 +390,7 @@ freecell.undo = function () {
 freecell.postLog = function () {
 	// When not running in the M3W environment,
 	// post the log to own server.
+	console.log(goog.json.serialize(freecell.log));
 	if (!freecell.m3w) {
 		try {
 			if ( freecell.log.length != 0 ) {
@@ -385,7 +469,7 @@ freecell.newGame = function (params) {
 	
 	// Create, shuffle and deal the deck
 	this.deck = new freecell.Deck(this);
-	var seed = null;
+	var seed = 7921427;
 	this.deck.Shuffle(seed);
 
 	this.deck.Deal();
@@ -406,5 +490,56 @@ freecell.newGame = function (params) {
 	console.log("New game. Seed: "+seed+".");
 };
 
+/**
+ * Start new replay.
+ * Gets the log from a textarea.
+ * JSON format:
+ * {"init": BOARDSTATE, "moves": [MOVE1, MOVE2, ...]}
+ * where every MOVEn is a move in JSON format (see freecell.doJsonMove),
+ * and BOARDSTATE is the initial state of the board (array of 8 arrays)
+ */
+freecell.newReplay = function () {
+	console.log("freecell.newReplay");
+
+	var json = $("#replayText").val();
+	json = goog.json.parse(json);
+	var initState = json.init;
+	var moves = json.moves;
+	
+	// Create the stacks
+	for (var i = 0; i < freecell.STACK_COUNT; i ++) {
+		this.stacks[i].cards = new Array();
+	}
+	
+	// Create the free cells
+	for (var i = 0; i < freecell.RESERVE_COUNT; i ++) {
+		this.reserves[i].card = null;
+	}
+	
+	// Create the foundations
+	for (var i = 0; i < freecell.FOUNDATION_COUNT; i ++) {
+		this.foundations[i].cards = new Array();
+	}
+	
+	// If this isn't the first game, delete the previous cards.
+	if (this.deck != null) {
+		for (var i = 0; i < this.deck.cards.length; i ++) {
+			this.layer.removeChild(this.deck.cards[i]);
+		}
+	}
+	
+	// Create, shuffle and deal the deck
+	this.deck = new freecell.Deck(this);
+
+	// Custom deal:
+	this.deck.customDeal(initState);
+
+	freecell.replayLog = moves;
+	freecell.replayIndex = 0;
+};
+
+
+
 //this is required for outside access after code is compiled in ADVANCED_COMPILATIONS mode
 goog.exportSymbol('freecell.start', freecell.start);
+goog.exportSymbol('freecell.newReplay', freecell.newReplay);
