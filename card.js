@@ -115,8 +115,9 @@ freecell.Card.prototype.playDoubleClick = function() {
 	var logEntry = new freecell.PlayEntry( code,
 		card.stack,
 		target,
-		card);
-	freecell.log.push(logEntry.toJson());
+		card,
+		1);
+	freecell.logEvent(logEntry);
 	freecell.undoLog.push(logEntry);
 
 	// Remove from stack
@@ -200,8 +201,9 @@ freecell.Card.MakeCard = function(suit, value) {
 						var logEntry = new freecell.PlayEntry( valid,
 								draggedCards[0].stack,
 								dropTarget,
-								draggedCards[0]);
-						freecell.log.push(logEntry.toJson());
+								draggedCards[0],
+								draggedCards.length);
+						freecell.logEvent(logEntry);
 		//				console.log("Invalid ("+dropTarget.IsValid(draggedCards)+")!");
 						dropTarget = draggedCards[0].stack;
 						console.log(freecell.log);
@@ -217,8 +219,9 @@ freecell.Card.MakeCard = function(suit, value) {
 						var logEntry = new freecell.PlayEntry( code,
 								draggedCards[0].stack,
 								dropTarget,
-								draggedCards[0]);
-						freecell.log.push(logEntry.toJson());
+								draggedCards[0],
+								draggedCards.length);
+						freecell.logEvent(logEntry);
 						freecell.undoLog.push(logEntry);
 		//				console.log("Valid: "+draggedCards[0].stack.getName()+", "+draggedCards[0].toString()+" > "+dropTarget.getName());
 					}

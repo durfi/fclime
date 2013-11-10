@@ -99,6 +99,16 @@ freecell.resume = function() {
 	}
 };
 
+// close function added by HP
+freecell.close = function() {
+        freecell.postLog();
+        if (freecell.m3w) {
+	        m3w.clearLime();
+	        /* Close can only be called once. */
+	        game.closeGame = function() {};
+	      }
+};
+
 freecell.log = new Array();
 // entry point
 freecell.start = function(params){
@@ -106,17 +116,19 @@ freecell.start = function(params){
 	// Running or stopped status
 	freecell.running = true;
 	
-	// M3W
 	var director;
+
+	// M3W
 	if (typeof m3w === 'object') {
 		// Running in framework environment
 		freecell.m3w = true;
 		// Register callback methods for the framework buttons
 		m3w.setCallback('pause', freecell.pause);
 		m3w.setCallback('resume', freecell.resume);
-		m3w.setCallback('exit', freecell.postLog);
+		m3w.setCallback('exit', freecell.close);
 
 		this.timer = params.get('timer', 'object');
+		this.gameLog = params.get('gamelog', 'object');
 		
 		// Render to the M3W container
 		director = new lime.Director(document.getElementById('fcellGameContent'), freecell.WIDTH, freecell.HEIGHT);
@@ -129,17 +141,6 @@ freecell.start = function(params){
 	
 	director.makeMobileWebAppCapable();
 	// director.setDisplayFPS(false);
-	
-	// Create loading scene
-	var loadingScene = new lime.Scene;
-	var loadingLabel = new lime.Label().setSize(freecell.WIDTH, 80)
-		.setText('Loading game...')
-		.setFontSize(80)
-		.setFontColor("#fff")
-		.setAlign("center")
-		.setPosition(freecell.WIDTH / 2, freecell.HEIGHT / 2);
-	loadingScene.appendChild(loadingLabel);
-	
 
 	// Create game scene
 	var gameScene = new lime.Scene;
@@ -171,17 +172,18 @@ freecell.start = function(params){
 		console.log("Key:" + ev.event.keyCode);
 		var keyCode = ev.event.keyCode;
 		if (keyCode == 82) {
-			// Display textarea with lightbox
+			// Display textarea with colorbox
 			var html = $('<div align="center">');
-			html.append('<h1>' + __('Insert replay text:')+'</h1><hr />');
-			html.append('<textarea id="replayText">');
+			html.append('<h2>' + __('Insert replay text:')+'</h2><hr />');
+			html.append('<textarea id="replayText" rows="14" cols="40">');
 			html.append('<input type="button" value="Replay!" onClick="freecell.newReplay()">');
 			html.append('</div>');
-			$.lightbox(html, {
+			$.colorbox({
+				'html'				: html,
 				'width'       : 640,
 				'height'      : 480,
-				'autoresize'  : true,
-				'onClose' : function() {}
+				'scrolling'   : false,
+				'onClosed' : function() {}
 			});
 		} else if (keyCode == 74) {
 			freecell.doNextReplayMove();
@@ -233,16 +235,7 @@ freecell.start = function(params){
 	this.layer.appendChild(freecell.pausepanel);
 	
 	// Loading scene while loading image
-	var img = new lime.fill.Image(freecell.CARD_IMAGE);
-	if (! img.isLoaded) {
-		director.replaceScene(loadingScene);
-		goog.events.listen(img, goog.events.EventType.LOAD, function() {
-			console.log("Image loaded.");
-			director.replaceScene(gameScene);
-		});
-	} else {
-		director.replaceScene(gameScene);
-	}
+	director.replaceScene(gameScene);
 	
 	freecell.newGame(params);
 };
@@ -284,21 +277,19 @@ freecell.checkWon = function() {
 		time = freecell.timer.getTime();
 	}
 
-	// Display congratulations with $.lightbox
+	// Display congratulations with $.colorbox
 	var html = $('<div align="center">');
-	html.append('<h1>' + __('Congratulations!')+'</h1><hr />');
-	// html.append('<h1>' + __('Your new coins:') +' '+ result['score'] + '<img src="./res/coin.png" height="40"/></h1>');
-	// html.append('<h2>' + __('Your coins in TOTAL:') +' '+ result['total'] + '<img src="./res/coin.png" height="30" /></h2>');
+	html.append('<h2>' + __('Congratulations!')+'</h2><hr />');
 	html.append('<h3>' + __('Number of moves:') +' '+ freecell.undoLog.length + '</h3>');
 	html.append('<h3>' + __('Elapsed time:') +' '+ (time/1000).toFixed(2) +' '+__('seconds') + '</h3>');
 	html.append('</div>');
-	$.lightbox(html, {
+	$.colorbox({
+		'html'				: html,
 		'width'       : 640,
 		'height'      : 480,
-		'autoresize'  : true,
-		'onClose' : function() {freecell.newGame(null);}
+		'scrolling'   : false,
+		'onClosed' : function() {freecell.newGame(null);}
 	});
-
 	return true;
 }
 
@@ -396,6 +387,20 @@ freecell.undo = function () {
 };
 
 /**
+ * Every event logging goes through this function. (In both
+ * m3w and standalone mode!)
+ *
+ * Undo logs should not use this!
+ */
+freecell.logEvent = function(logEntry) {
+	if (!freecell.m3w) {
+		freecell.log.push(logEntry.toJson());
+	} else {
+		freecell.gameLog.append(logEntry.toJson());
+	}
+};
+
+/**
  * Send the log to the server
  */
 freecell.postLog = function () {
@@ -423,7 +428,7 @@ freecell.postLog = function () {
 	}
 	// When running in M3W, give the log to the framework
 	else {
-		// m3w.log?
+		freecell.gameLog.close();
 	}
 };
 
@@ -480,8 +485,9 @@ freecell.newGame = function (params) {
 	
 	// Create, shuffle and deal the deck
 	this.deck = new freecell.Deck(this);
+	// var seed = 7921427;
 	var seed = null;
-	this.deck.Shuffle(seed);
+	seed = this.deck.Shuffle(seed);
 
 	this.deck.Deal();
 	
@@ -499,6 +505,7 @@ freecell.newGame = function (params) {
 			{"seed": seed, "board": board})).toJson()
 			);
 	console.log("New game. Seed: "+seed+".");
+	console.log(goog.json.serialize(board));
 };
 
 /**
