@@ -276,12 +276,26 @@ freecell.checkWon = function() {
 		freecell.timer.pauseTime();	
 		time = freecell.timer.getTime();
 	}
+	var seconds = time / 1000;
+
+	// Calculate the score
+	var numOfMoves = freecell.undoLog.length + freecell.numberOfCardsInFoundations();
+	var score = 1000;
+	// Moves over 52 are -3 points:
+	score = score - (3 * (numOfMoves - 52));
+	// Every second is -0.3 point:
+	score = score - (0.3 * seconds);
+	// Dont go under 400:
+	score = (score < 400) ? 400 : score;
+	// Round the score
+	score = Math.round(score);
 
 	// Display congratulations with $.colorbox
 	var html = $('<div align="center">');
 	html.append('<h2>' + __('Congratulations!')+'</h2><hr />');
-	html.append('<h3>' + __('Number of moves:') +' '+ freecell.undoLog.length + '</h3>');
-	html.append('<h3>' + __('Elapsed time:') +' '+ (time/1000).toFixed(2) +' '+__('seconds') + '</h3>');
+	html.append('<h3>' + __('Number of moves:') +' '+ numOfMoves + '</h3>');
+	html.append('<h3>' + __('Elapsed time:') +' '+ seconds.toFixed(2) +' '+__('seconds') + '</h3>');
+	html.append('<h2>' + __('Score:') + ' ' + score + '</h2>');
 	html.append('</div>');
 	$.colorbox({
 		'html'				: html,
@@ -563,6 +577,14 @@ freecell.newReplay = function () {
 		.setPosition(freecell.WIDTH / 2, freecell.HEIGHT - 20);
 
 	freecell.layer.appendChild(freecell.counterLabel);
+};
+
+freecell.numberOfCardsInFoundations = function() {
+	sum = 0;
+	for (var i = 0; i < freecell.FOUNDATION_COUNT; i ++) {
+		sum = sum + freecell.foundations[i].cards.length;
+	}
+	return sum;
 };
 
 
